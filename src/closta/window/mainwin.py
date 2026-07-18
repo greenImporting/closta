@@ -1,6 +1,8 @@
 import dearpygui.dearpygui as dpg
 import pywinctl as pwc
 
+WINDOW_RUNNING = False
+_i_am_closed = False
 
 def create_window():
     dpg.create_context()
@@ -9,29 +11,43 @@ def create_window():
         dpg.add_text("Lorem ipsum")
 
 def spawn_window():
-    create_window()
-    dpg.setup_dearpygui()
-    dpg.show_viewport()
-    dpg.set_primary_window("closta", True)
+    global WINDOW_RUNNING, _i_am_closed
+    _i_am_closed = False
+    if WINDOW_RUNNING == False:
+        # add check logic here for if there is win open already 
+        # so multiple windows dont open (clicking on tray)
+        # checking using is dearpygui running before creating everythign will give it a heart attack
 
-    # gotta check for the inial focus to then check for unfocus,
-    # otherwise itll kill itself instantly
-    while dpg.is_dearpygui_running():
-        activ = pwc.getActiveWindowTitle()
-        if activ == "closta":
-            break
-        dpg.render_dearpygui_frame()
+        create_window()
+        dpg.setup_dearpygui()
+        dpg.show_viewport()
+        dpg.set_primary_window("closta", True)
+        WINDOW_RUNNING = True
 
-    # breaks if window isnt focused.
-    while dpg.is_dearpygui_running():
-        activ = pwc.getActiveWindowTitle()
-        if activ != "closta":
-            break
-        dpg.render_dearpygui_frame()
+        # gotta check for the inial focus to then check for unfocus,
+        # otherwise itll kill itself instantly
+        while dpg.is_dearpygui_running():
+            activ = pwc.getActiveWindowTitle()
+            if _i_am_closed:
+                break
+            if activ == "closta":
+                break
+            dpg.render_dearpygui_frame()
 
-    dpg.destroy_context()
+        # breaks if window isnt focused.
+        while dpg.is_dearpygui_running():
+            activ = pwc.getActiveWindowTitle()
+            if _i_am_closed:
+                break
+            if activ != "closta":
+                break
+            dpg.render_dearpygui_frame()
+        dpg.destroy_context()
+        WINDOW_RUNNING = False
+    print("window is runnign!!!!! ")
 
 
 if __name__ == "__main__":
+    print("sanity check")
     spawn_window()
 

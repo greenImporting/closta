@@ -15,9 +15,11 @@ idea: written in a high level language, such as python, using libs for window su
 - [x] destroys after unfocus
 - [ ] main content
 - [ ] task/tracking logic
+- [ ] storage
 
 ### taskbar
 - [x] tray icon
 - [x] tray anything LOL
-- [ ] open window using tray icon
+- [x] open window using tray icon
 - [ ] window location spawn control
+- [ ] focus on open?
