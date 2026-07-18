@@ -1,6 +1,9 @@
+import pystray
+import threading
 import dearpygui.dearpygui as dpg
 import pywinctl as pwc
-
+from pathlib import Path
+from PIL import Image
 
 
 def create_window():
@@ -9,13 +12,19 @@ def create_window():
     with dpg.window(tag="closta"):
         dpg.add_text("Lorem ipsum")
 
-
+def create_tray():
+    imgpath = Path(__file__).resolve().parent / ".." / ".." / "media" / "exampletrayicon.png"
+    trayico = Image.open(imgpath)
+    ico = pystray.Icon("uhhh", icon=trayico)
+    threading.Thread(target=ico.run, daemon=True).start()
+    #run icon as a seperate thread to not block main thread, does not close with dpg win close
 
 if __name__ == "__main__":
     create_window()
     dpg.setup_dearpygui()
     dpg.show_viewport()
     dpg.set_primary_window("closta", True)
+    create_tray()
     # gotta check for the inial focus to then check for unfocus,
     # otherwise itll kill itself instantly
     while dpg.is_dearpygui_running():
