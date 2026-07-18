@@ -17,7 +17,7 @@ idea: written in a high level language, such as python, using libs for window su
 - [ ] task/tracking logic
 
 ### taskbar
-- [ ] tray icon
-- [ ] tray anything LOL
+- [x] tray icon
+- [x] tray anything LOL
 - [ ] open window using tray icon
 - [ ] window location spawn control

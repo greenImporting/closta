@@ -8,7 +8,7 @@ def create_window():
     with dpg.window(tag="closta"):
         dpg.add_text("Lorem ipsum")
 
-if __name__ == "__main__":
+def spawn_window():
     create_window()
     dpg.setup_dearpygui()
     dpg.show_viewport()
@@ -30,6 +30,8 @@ if __name__ == "__main__":
         dpg.render_dearpygui_frame()
 
     dpg.destroy_context()
-    # dpg.start_dearpygui()
-    # dpg.destroy_context()
+
+
+if __name__ == "__main__":
+    spawn_window()
 
