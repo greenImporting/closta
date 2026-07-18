@@ -4,6 +4,8 @@ import pywinctl as pwc
 WINDOW_RUNNING = False
 _i_am_closed = False
 
+
+
 def create_window():
     dpg.create_context()
     dpg.create_viewport(title="closta", width=300, height=600, decorated=False)

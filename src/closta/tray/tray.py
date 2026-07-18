@@ -1,7 +1,7 @@
 from pathlib import Path
 from PIL import Image
 from time import sleep
-import closta.window.mainwin as cwin
+import closta.window.main as cwin
 import pystray
 import threading
 import os

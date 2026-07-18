@@ -23,3 +23,5 @@ dmypy.json
 *.so
 *.dylib
 *.dll
+# yes awfully specific lol
+dearpyguitesting.py

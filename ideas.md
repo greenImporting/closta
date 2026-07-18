@@ -23,3 +23,4 @@ idea: written in a high level language, such as python, using libs for window su
 - [x] open window using tray icon
 - [ ] window location spawn control
 - [ ] focus on open?
+
