@@ -8,3 +8,16 @@ idea: written in a high level language, such as python, using libs for window su
 ### idea:
 ![mockup](media/bestmockup.png)
 (obviously better color choices will be made but its a mockup!!! give me some credit...)
+
+## checklist
+### main window
+- [x] create prim window
+- [x] destroys after unfocus
+- [ ] main content
+- [ ] task/tracking logic
+
+### taskbar
+- [ ] tray icon
+- [ ] tray anything LOL
+- [ ] open window using tray icon
+- [ ] window location spawn control

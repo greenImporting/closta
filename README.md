@@ -3,9 +3,9 @@
 
 ## placeholder text talking about how it works
 
-yes it works, python etc..
+simple reminder tracker, checkbox etc. made using python and dearpygui gui lib. currently only windows as its easier to develop for window positioning
 
-## setup guide
+## build from source
 
 1. have uv installed
 2. uv sync
