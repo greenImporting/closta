@@ -28,6 +28,17 @@ def save_task(name, description=None, importance=0):
     conn.commit()
     conn.close()
 
+def edit_task(name, description, importance, task_id):
+    conn = sqlite3.connect(db_name)
+    c = conn.cursor()
+
+    c.execute('UPDATE tasks SET name=?, description=?, importance=? WHERE id=?',
+             (name,description,importance,task_id)
+    ) 
+
+    conn.commit()
+    conn.close()
+
 def delete_callback(sender, app_data, usr_data):
     task_id = usr_data
     conn = sqlite3.connect(db_name)

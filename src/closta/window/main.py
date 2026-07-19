@@ -1,7 +1,7 @@
 import dearpygui.dearpygui as dpg
 import pywinctl as pwc
 import sqlite3
-from closta.storage.sqlite import delete_callback, save_task, init_db, db_name
+from closta.storage.sqlite import delete_callback, save_task, init_db, db_name, edit_task
 from pathlib import Path
 from time import sleep
 
@@ -12,12 +12,14 @@ _graceful_tray_exit = False
 [x] build tasks
 [x] add tasks
 [x] delete tasks
-[ ] edit tasks
+[x] edit tasks
 [x] import tasks from db
 
 
-current issues im noticing.
+current issues.
 - spam open breaks window, first open from tray breaks
+- super ugly add task, must fix.
+- 
 
 """
 def newbie_checker():
@@ -36,10 +38,11 @@ def build_task(task_id, heading, description, importance: int, parent="task_cont
     will just add those into main window as like a list, with a button of completed and delete.
     """
     with dpg.child_window(height=200, horizontal_scrollbar=False, parent=parent):
-        dpg.add_text(heading, wrap=0 )
-        dpg.add_text(description,wrap=0)
+        dpg.add_text(heading,tag=f"heading_{task_id}", wrap=0 )
+        dpg.add_text(description,tag=f"desc_{task_id}", wrap=0 )
+        dpg.add_button(label="edit", user_data=task_id, callback=edit_callback)
         dpg.add_button(label="delete", user_data=task_id, callback=delete_callback)
-        # dpg.add_button(label="edit", user_data=task_id, callback=edit_callback)
+
 
 def load_tasks_ui(parent="task_container"):
     conn = sqlite3.connect(db_name)
@@ -50,8 +53,10 @@ def load_tasks_ui(parent="task_container"):
     for row in rows:
         build_task(row[0], row[1], row[2], row[3], parent=parent)
 
-
 def new_task(sender, app_data):
+    if dpg.does_item_exist("new_task_win"):
+        dpg.focus_item("new_task_win")
+        return
 
     def refresh_task_list():
         dpg.delete_item("task_container", children_only=True)
@@ -65,11 +70,42 @@ def new_task(sender, app_data):
         dpg.delete_item("new_task_win")
         refresh_task_list()
 
-    with dpg.window(tag="new_task_win", label="new task"):
+    with dpg.window(tag="new_task_win", label="new task", on_close=lambda: dpg.delete_item("new_task_win")):
         dpg.add_input_text(tag="heading_input", label="heading")
         dpg.add_input_text(tag="desc_input", label="description")
         dpg.add_combo(items=[0,1,2], tag="imp_dropdown", default_value=0)
         dpg.add_button(label="add task", callback=save_new_task_callback)
+
+def edit_callback(sender,app_data,usr_data):
+    task_id = usr_data
+    conn = sqlite3.connect(db_name)
+    c = conn.cursor()
+
+    c.execute('SELECT name, description, importance FROM tasks WHERE id=?', (task_id,))
+    row = c.fetchone()
+    conn.close()
+    if not row:
+        return # :P
+    
+    def save_edit(task_id):
+        heading = dpg.get_value(f"edit_heading_{task_id}")
+        description = dpg.get_value(f"edit_desc_{task_id}")
+        importance = dpg.get_value(f"edit_imp_{task_id}")
+        edit_task(heading, description, importance, task_id)
+        dpg.delete_item(f"edit_win_{task_id}")
+        dpg.delete_item("task_container", children_only=True)
+        load_tasks_ui()
+    
+    with dpg.window(tag=f"edit_win_{task_id}", label="edit task"):
+        dpg.add_input_text(tag=f"edit_heading_{task_id}", label="heading", default_value=row[0])
+        dpg.add_input_text(tag=f"edit_desc_{task_id}", label="description", default_value=row[1] or "")
+        dpg.add_combo(items=[0,1,2], tag=f"edit_imp_{task_id}", default_value=row[2])
+        dpg.add_button(label="save", callback=lambda: save_edit(task_id))
+    
+
+    parent = dpg.get_item_parent(sender)
+    dpg.delete_item(parent)
+
 
 
 def create_window():
@@ -104,15 +140,13 @@ def spawn_window():
         dpg.bind_item_font("h", heading_font)
         dpg.set_primary_window("closta", True)
         WINDOW_RUNNING = True
-
         # breaks if window isnt focused.
         while dpg.is_dearpygui_running():
-            activ = pwc.getActiveWindowTitle()
+            dpg.render_dearpygui_frame()
             if _graceful_tray_exit:
                 break
-            if activ != "closta":
+            if pwc.getActiveWindowTitle() != "closta":
                 break
-            dpg.render_dearpygui_frame()
 
     finally:
         WINDOW_RUNNING = False
