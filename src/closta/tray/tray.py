@@ -10,8 +10,11 @@ import os
 # basically need to make it so it wont be affected after one click, and two rapid clicks
 # will close it.
 
+
+
 def spawn_closta(icon, item):
-    threading.Thread(target=cwin.spawn_window, daemon=True).start()
+    if not cwin.WINDOW_RUNNING:
+        threading.Thread(target=cwin.spawn_window, daemon=True).start()
 
 def exit_sequence(icon, item):
     cwin._graceful_tray_exit = True

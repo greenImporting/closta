@@ -1,12 +1,15 @@
 import dearpygui.dearpygui as dpg
 import pywinctl as pwc
 import sqlite3
+import threading
+import time
 from closta.storage.sqlite import delete_callback, save_task, init_db, db_name, edit_task
 from pathlib import Path
-from time import sleep
+
 
 WINDOW_RUNNING = False
 _graceful_tray_exit = False
+_lock = threading.Lock()
 
 """
 [x] build tasks
@@ -125,32 +128,45 @@ def create_window():
 
 def spawn_window():
     global WINDOW_RUNNING, _graceful_tray_exit
-    _graceful_tray_exit = False
-    if WINDOW_RUNNING:
-        print("window is runnign!!!!! ")
-        return
-
-    # fyi: checking using is dearpygui running before creating everythign will give it a heart attack
-    try:
-        create_window()
-        dpg.setup_dearpygui()
-        dpg.show_viewport()
-        with dpg.font_registry():
-            heading_font = dpg.add_font("C:/Windows/Fonts/arial.ttf", size=24)
-        dpg.bind_item_font("h", heading_font)
-        dpg.set_primary_window("closta", True)
+    with _lock:
+        if WINDOW_RUNNING:
+            print("window is runnign!!!!! ")
+            return
+        _graceful_tray_exit = False
         WINDOW_RUNNING = True
-        # breaks if window isnt focused.
-        while dpg.is_dearpygui_running():
-            dpg.render_dearpygui_frame()
-            if _graceful_tray_exit:
-                break
-            if pwc.getActiveWindowTitle() != "closta":
-                break
+        # fyi: checking using is dearpygui running before creating everythign will give it a heart attack
+        try:
+            create_window()
+            dpg.setup_dearpygui()
+            dpg.show_viewport()
 
-    finally:
-        WINDOW_RUNNING = False
-        dpg.destroy_context()
+            with dpg.font_registry():
+                heading_font = dpg.add_font("C:/Windows/Fonts/arial.ttf", size=24)
+            dpg.bind_item_font("h", heading_font)
+    
+            dpg.set_primary_window("closta", True)
+
+            # ---- focus logic start ----
+            # debugging this is hell.
+            _first_focus = False
+            # breaks if window isnt focused.
+            while dpg.is_dearpygui_running():
+                dpg.render_dearpygui_frame()
+                if _graceful_tray_exit:
+                    break
+
+                current_window = pwc.getActiveWindowTitle()
+                if not _first_focus:
+                    if current_window == "closta":
+                        _first_focus = True
+                        # dont pop, render till focused
+                else:
+                    if current_window != "closta":
+                        break
+
+        finally:
+            WINDOW_RUNNING = False
+            dpg.destroy_context()
         
 if __name__ == "__main__":
     spawn_window()

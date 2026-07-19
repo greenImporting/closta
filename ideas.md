@@ -1,13 +1,6 @@
-## what ever should i do?
+## notes for self.
 
-simple notes+reminders app for windows (+ linux?) that lives in the taskbar.
-![mullvadd](assets/mukllvad%20example.png)
-
-idea: written in a high level language, such as python, using libs for window such as dear py gui. have a small icon in taskbar that spawns a bigger window with main content on click.
-
-### idea:
-![mockup](assets/bestmockup.png)
-(obviously better color choices will be made but its a mockup!!! give me some credit...)
+continue to follow PEP 8. 
 
 ## checklist
 ### main window
