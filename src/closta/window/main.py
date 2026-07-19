@@ -3,6 +3,7 @@ import pywinctl as pwc
 import sqlite3
 from closta.storage.sqlite import delete_callback, save_task, init_db, db_name
 from pathlib import Path
+from time import sleep
 
 WINDOW_RUNNING = False
 _graceful_tray_exit = False
@@ -12,11 +13,11 @@ _graceful_tray_exit = False
 [x] add tasks
 [x] delete tasks
 [ ] edit tasks
-[ ] import tasks from db
+[x] import tasks from db
+
 
 current issues im noticing.
-- not importing correctly
-- saving is a bitch
+- spam open breaks window, first open from tray breaks
 
 """
 def newbie_checker():
@@ -103,15 +104,6 @@ def spawn_window():
         dpg.bind_item_font("h", heading_font)
         dpg.set_primary_window("closta", True)
         WINDOW_RUNNING = True
-
-        # first check to see if you have decided to click on closta yet
-        while dpg.is_dearpygui_running():
-            activ = pwc.getActiveWindowTitle()
-            if _graceful_tray_exit:
-                break
-            if activ == "closta":
-                break
-            dpg.render_dearpygui_frame()
 
         # breaks if window isnt focused.
         while dpg.is_dearpygui_running():

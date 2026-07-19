@@ -14,7 +14,7 @@ def spawn_closta(icon, item):
     threading.Thread(target=cwin.spawn_window, daemon=True).start()
 
 def exit_sequence(icon, item):
-    cwin._i_am_closed = True
+    cwin._graceful_tray_exit = True
     icon.stop()
     # just incase tray lingers, force exit
     os._exit(0)
