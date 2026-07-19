@@ -28,7 +28,7 @@ def build_menu(ico):
 
 
 def create_tray():
-    imgpath = Path(__file__).resolve().parent / ".." / ".." / ".." / "media" / "exampletrayicon.png"
+    imgpath = Path(__file__).resolve().parent / ".." / ".." / ".." / "assets" / "exampletrayicon.png"
     trayico = Image.open(imgpath)
     closta_tray = pystray.Icon("uhhh", icon=trayico)
     closta_tray.menu = build_menu(closta_tray)

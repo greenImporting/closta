@@ -4,6 +4,29 @@ import pywinctl as pwc
 WINDOW_RUNNING = False
 _i_am_closed = False
 
+def build_table():
+    with dpg.table(header_row=False):
+        dpg.add_table_column()
+        #TODO: if logic here if first run
+        with dpg.table_row():
+            with dpg.table_cell():
+                dpg.add_text("example data :P")
+
+def build_task():
+    """
+    function to be ran to create a task. arguments to be
+    title, description, importance TODO:extra metadata such as time
+
+    will just add those into main window as like a list, with a button of completed and delete.
+    """
+    #example data
+    _example_head = "Lorem ipsum"
+    _example_desc = "dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat."
+    _example_importance = 1 # 0: !, 1: !!, 2: !!!
+
+
+def delete_task():
+    pass
 
 
 def create_window():
@@ -11,6 +34,7 @@ def create_window():
     dpg.create_viewport(title="closta", width=300, height=600, decorated=False)
     with dpg.window(tag="closta"):
         dpg.add_text("Lorem ipsum")
+        build_table()
 
 def spawn_window():
     global WINDOW_RUNNING, _i_am_closed
