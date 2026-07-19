@@ -3,8 +3,11 @@ import pywinctl as pwc
 import sqlite3
 import threading
 import time
+import logging
 from closta.storage.sqlite import delete_callback, save_task, init_db, db_name, edit_task
 from pathlib import Path
+
+logging.basicConfig(level=logging.ERROR, format="%(asctime)s - %(levelname)s - %(message)s")
 
 
 WINDOW_RUNNING = False
@@ -12,12 +15,6 @@ _graceful_tray_exit = False
 _lock = threading.Lock()
 
 """
-[x] build tasks
-[x] add tasks
-[x] delete tasks
-[x] edit tasks
-[x] import tasks from db
-
 
 current issues.
 - spam open breaks window, first open from tray breaks
@@ -109,8 +106,6 @@ def edit_callback(sender,app_data,usr_data):
     parent = dpg.get_item_parent(sender)
     dpg.delete_item(parent)
 
-
-
 def create_window():
     newbie_checker()
     dpg.create_context()
@@ -130,7 +125,7 @@ def spawn_window():
     global WINDOW_RUNNING, _graceful_tray_exit
     with _lock:
         if WINDOW_RUNNING:
-            print("window is runnign!!!!! ")
+            logging.info("window is running")
             return
         _graceful_tray_exit = False
         WINDOW_RUNNING = True
@@ -145,28 +140,28 @@ def spawn_window():
             dpg.bind_item_font("h", heading_font)
     
             dpg.set_primary_window("closta", True)
-
+            
             # ---- focus logic start ----
-            # debugging this is hell.
-            _first_focus = False
+            # debugging this was hell, spent like 3 hours figuring out that i needed .activate() ;)
             # breaks if window isnt focused.
+            closta_windows = pwc.getWindowsWithTitle('closta')
+            if closta_windows:
+                closta_win = closta_windows[0]
+                closta_win.activate()
+            
+            _first_focus = False
             while dpg.is_dearpygui_running():
                 dpg.render_dearpygui_frame()
                 if _graceful_tray_exit:
                     break
 
-                current_window = pwc.getActiveWindowTitle()
-                if not _first_focus:
-                    if current_window == "closta":
-                        _first_focus = True
-                        # dont pop, render till focused
-                else:
-                    if current_window != "closta":
-                        break
-
+                if closta_win.isActive:
+                    _first_focus = True
+                elif _first_focus:
+                    break
         finally:
-            WINDOW_RUNNING = False
             dpg.destroy_context()
+            WINDOW_RUNNING = False
         
 if __name__ == "__main__":
     spawn_window()
