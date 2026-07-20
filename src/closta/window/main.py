@@ -4,6 +4,7 @@ import sqlite3
 import threading
 import time
 import logging
+import pymonctl
 from closta import state
 from closta.storage.sqlite import delete_callback, save_task, init_db, db_name, edit_task
 from pathlib import Path
@@ -100,7 +101,7 @@ def edit_callback(sender,app_data,usr_data):
     with dpg.window(tag=f"edit_win_{task_id}", label="edit task"):
         dpg.add_input_text(tag=f"edit_heading_{task_id}", label="heading", default_value=row[0])
         dpg.add_input_text(tag=f"edit_desc_{task_id}", label="description", default_value=row[1] or "")
-        dpg.add_combo(items=[0,1,2], tag=f"edit_imp_{task_id}", default_value=row[2])
+        dpg.add_combo(items=[0,1,2], tag=f"edit_imp_{task_id}", default_value=row[2], label="importance")
         dpg.add_button(label="save", callback=lambda: save_edit(task_id))
     
 
@@ -108,12 +109,29 @@ def edit_callback(sender,app_data,usr_data):
     task_window = dpg.get_item_parent(parent_group)
     dpg.delete_item(task_window)
 
+def settings_callback(sender, app_data, usr_data):
+    with dpg.window(tag="settings_window", width= 250, height=200, decorated=False):
+        dpg.add_text("settings")
+
 
 def create_window():
 
     def calc_window_pos():
         vpw, vph = dpg.get_viewport_width(), dpg.get_viewport_height()
-        screen_width, screen_height = pwc.getScreenSize()
+        
+        try:
+            primary = pymonctl.getPrimary()
+            if primary:
+                screen_width, screen_height = primary.size
+            else:
+                monitors = pymonctl.getAllMonitors()
+                if monitors:
+                    screen_width, screen_height = monitors[0].size
+                else:
+                    screen_width, screen_height = 1920, 1080
+        except Exception:
+            screen_width, screen_height = 1920, 1080
+
         x, y = state._spawn_pos
         offset = 40
         left = max(0, min(x - vpw // 2, screen_width - vpw))
@@ -122,13 +140,13 @@ def create_window():
 
     newbie_checker()
     dpg.create_context()
-    dpg.create_viewport(title="closta", width=300, height=300, decorated=False)
+    dpg.create_viewport(title="closta", width=300, height=600, decorated=False)
     dpg.set_viewport_pos(calc_window_pos())
     with dpg.window(tag="closta"):
         dpg.add_text("closta", tag="h")
         with dpg.group(horizontal=True):
             dpg.add_button(label="add task", callback=new_task)
-            dpg.add_button(label="settings")
+            dpg.add_button(label="settings", callback=settings_callback)
     
         with dpg.group(tag="task_container"):
             pass
