@@ -10,6 +10,12 @@ continue to follow PEP 8.
 - [x] task/tracking logic
 - [x] storage
 
+### settings
+- [ ] settings window
+- [ ] window color customisation
+- [ ] offset from taskbar slider
+- [ ] main window height (300-600)
+
 ### taskbar
 - [x] tray icon
 - [x] tray anything LOL
@@ -17,3 +23,7 @@ continue to follow PEP 8.
 - [ ] window location spawn control
 - [x] focus on open?
 
+### bits and bobs
+- [ ] fix pyproject.toml
+- [ ] tests
+- [ ] push edit and delete buttons to bottom of child window.

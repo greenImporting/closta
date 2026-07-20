@@ -4,16 +4,14 @@ import sqlite3
 import threading
 import time
 import logging
+from closta import state
 from closta.storage.sqlite import delete_callback, save_task, init_db, db_name, edit_task
 from pathlib import Path
 
 logging.basicConfig(level=logging.ERROR, format="%(asctime)s - %(levelname)s - %(message)s")
 
 
-WINDOW_RUNNING = False
-_graceful_tray_exit = False
 _lock = threading.Lock()
-
 """
 
 current issues.
@@ -35,15 +33,17 @@ def build_task(task_id, heading, description, importance: int, parent="task_cont
     """
     function to be ran to create a task. arguments to be
     title, description, importance TODO:extra metadata such as time
-
-    will just add those into main window as like a list, with a button of completed and delete.
     """
-    with dpg.child_window(height=200, horizontal_scrollbar=False, parent=parent):
+    with dpg.child_window(height=200,horizontal_scrollbar=False, parent=parent):
         dpg.add_text(heading,tag=f"heading_{task_id}", wrap=0 )
+        dpg.add_separator()
         dpg.add_text(description,tag=f"desc_{task_id}", wrap=0 )
-        dpg.add_button(label="edit", user_data=task_id, callback=edit_callback)
-        dpg.add_button(label="delete", user_data=task_id, callback=delete_callback)
 
+        # dpg.add_spacer(height=5)
+        # dpg.add_separator()
+        with dpg.group(horizontal=True): #tag for later customisation
+            dpg.add_button(label="edit", user_data=task_id, callback=edit_callback)
+            dpg.add_button(label="delete", user_data=task_id, callback=delete_callback)
 
 def load_tasks_ui(parent="task_container"):
     conn = sqlite3.connect(db_name)
@@ -104,16 +104,31 @@ def edit_callback(sender,app_data,usr_data):
         dpg.add_button(label="save", callback=lambda: save_edit(task_id))
     
 
-    parent = dpg.get_item_parent(sender)
-    dpg.delete_item(parent)
+    parent_group = dpg.get_item_parent(sender)
+    task_window = dpg.get_item_parent(parent_group)
+    dpg.delete_item(task_window)
+
 
 def create_window():
+
+    def calc_window_pos():
+        vpw, vph = dpg.get_viewport_width(), dpg.get_viewport_height()
+        screen_width, screen_height = pwc.getScreenSize()
+        x, y = state._spawn_pos
+        offset = 40
+        left = max(0, min(x - vpw // 2, screen_width - vpw))
+        top = max(0, min(y - vph - offset, screen_height - vph))
+        return left, top
+
     newbie_checker()
     dpg.create_context()
-    dpg.create_viewport(title="closta", width=300, height=600, decorated=False)
+    dpg.create_viewport(title="closta", width=300, height=300, decorated=False)
+    dpg.set_viewport_pos(calc_window_pos())
     with dpg.window(tag="closta"):
         dpg.add_text("closta", tag="h")
-        dpg.add_button(label="add task", callback=new_task)
+        with dpg.group(horizontal=True):
+            dpg.add_button(label="add task", callback=new_task)
+            dpg.add_button(label="settings")
     
         with dpg.group(tag="task_container"):
             pass
@@ -123,24 +138,27 @@ def create_window():
 
 
 def spawn_window():
-    global WINDOW_RUNNING, _graceful_tray_exit
+    
+    def set_fonts():
+        with dpg.font_registry():
+            heading_font = dpg.add_font("C:/Windows/Fonts/arial.ttf", size=24)
+            dpg.bind_item_font("h", heading_font)
+
     with _lock:
-        if WINDOW_RUNNING:
+        if state.WINDOW_RUNNING:
             logging.info("window is running")
             return
-        _graceful_tray_exit = False
-        WINDOW_RUNNING = True
+        state._graceful_tray_exit = False
+        state.WINDOW_RUNNING = True
         # fyi: checking using is dearpygui running before creating everythign will give it a heart attack
         try:
             create_window()
             dpg.setup_dearpygui()
-            dpg.show_viewport()
 
-            with dpg.font_registry():
-                heading_font = dpg.add_font("C:/Windows/Fonts/arial.ttf", size=24)
-            dpg.bind_item_font("h", heading_font)
-    
+            dpg.show_viewport()
+            set_fonts()
             dpg.set_primary_window("closta", True)
+
             
             # ---- focus logic start ----
             # debugging this was hell, spent like 3 hours figuring out that i needed .activate() ;)
@@ -153,7 +171,7 @@ def spawn_window():
             _first_focus = False
             while dpg.is_dearpygui_running():
                 dpg.render_dearpygui_frame()
-                if _graceful_tray_exit:
+                if state._graceful_tray_exit:
                     break
 
                 if closta_win.isActive:
@@ -162,7 +180,7 @@ def spawn_window():
                     break
         finally:
             dpg.destroy_context()
-            WINDOW_RUNNING = False
+            state.WINDOW_RUNNING = False
         
 if __name__ == "__main__":
     spawn_window()

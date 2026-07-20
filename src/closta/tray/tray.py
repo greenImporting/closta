@@ -1,28 +1,32 @@
 from pathlib import Path
 from PIL import Image
 from time import sleep
+from closta import state
 import closta.window.main as cwin
 import pystray
 import threading
 import os
 import time
+import pyautogui
 
 _last_spawn_time = 0
-def spawn_closta(icon, item):
 
+def spawn_closta(icon, item):
     global _last_spawn_time
+    
     now = time.time()
     if now - _last_spawn_time < 1.0:
         return
     _last_spawn_time = now
 
-    if cwin.WINDOW_RUNNING:
+    if state.WINDOW_RUNNING:
         return
     else:
+        state._spawn_pos = pyautogui.position()
         threading.Thread(target=cwin.spawn_window, daemon=True).start()
 
 def exit_sequence(icon, item):
-    cwin._graceful_tray_exit = True
+    state._graceful_tray_exit = True
     icon.stop()
     # just incase tray lingers, force exit
     os._exit(0)
@@ -43,5 +47,5 @@ def create_tray():
     threading.Thread(target=closta_tray.run, daemon=True).start()
 
 create_tray()
-for i in range(1,10):
-    sleep(10) #debug
+while True:
+    sleep(3600)

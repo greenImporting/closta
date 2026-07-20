@@ -49,5 +49,6 @@ def delete_callback(sender, app_data, usr_data):
     conn.commit()
     conn.close()
 
-    parent = dpg.get_item_parent(sender)
-    dpg.delete_item(parent)
+    parent_group = dpg.get_item_parent(sender)
+    task_window = dpg.get_item_parent(parent_group)
+    dpg.delete_item(task_window)
