@@ -5,15 +5,20 @@ import closta.window.main as cwin
 import pystray
 import threading
 import os
+import time
 
-#TODO: when you spam the tray to open it, you are able to 'refresh'.
-# basically need to make it so it wont be affected after one click, and two rapid clicks
-# will close it.
-
-
-
+_last_spawn_time = 0
 def spawn_closta(icon, item):
-    if not cwin.WINDOW_RUNNING:
+
+    global _last_spawn_time
+    now = time.time()
+    if now - _last_spawn_time < 1.0:
+        return
+    _last_spawn_time = now
+
+    if cwin.WINDOW_RUNNING:
+        return
+    else:
         threading.Thread(target=cwin.spawn_window, daemon=True).start()
 
 def exit_sequence(icon, item):

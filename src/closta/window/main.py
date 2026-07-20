@@ -17,7 +17,8 @@ _lock = threading.Lock()
 """
 
 current issues.
-- spam open breaks window, first open from tray breaks
+- TODO: fix close then reopen when clicking on tray icon after 1sec debounce.
+    i guess this happens becuase you unfocus, closing it, then reopen from left clicking on tray.
 - super ugly add task, must fix.
 - 
 
