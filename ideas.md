@@ -11,16 +11,16 @@ continue to follow PEP 8.
 - [x] storage
 
 ### settings
-- [ ] settings window
+- [x] settings window
 - [ ] window color customisation
-- [ ] offset from taskbar slider
-- [ ] main window height (300-600)
+- [x] offset from taskbar slider
+- [x] main window height (200-600)
 
 ### taskbar
 - [x] tray icon
 - [x] tray anything LOL
 - [x] open window using tray icon
-- [ ] window location spawn control
+- [x] window location spawn control
 - [x] focus on open?
 
 ### bits and bobs

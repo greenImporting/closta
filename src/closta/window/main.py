@@ -6,7 +6,7 @@ import time
 import logging
 import pymonctl
 from closta import state
-from closta.storage.sqlite import delete_callback, save_task, init_db, db_name, edit_task
+from closta.storage.sqlite import delete_callback, save_task, init_db, db_name, edit_task, get_setting, save_setting
 from pathlib import Path
 
 logging.basicConfig(level=logging.ERROR, format="%(asctime)s - %(levelname)s - %(message)s")
@@ -110,42 +110,76 @@ def edit_callback(sender,app_data,usr_data):
     dpg.delete_item(task_window)
 
 def settings_callback(sender, app_data, usr_data):
-    #check if exist alrdy
     if dpg.does_item_exist("settings_window"):
         dpg.focus_item("settings_window")
         return
-    with dpg.window(tag="settings_window", width= 200, height=200):
-        dpg.add_text("settings")
 
+    current_height = int(get_setting('window_height', '600'))
+    current_offset = int(get_setting('viewport_offset', '40'))
+
+    def apply_settings():
+        new_height = dpg.get_value("height_slider")
+        new_offset = dpg.get_value("offset_slider")
+        # save
+        save_setting('window_height', new_height)
+        save_setting('viewport_offset', new_offset)
+        # apply to viewport
+        dpg.set_viewport_height(new_height)
+        dpg.set_viewport_pos(calc_window_pos(new_offset))
+        dpg.delete_item("settings_window")
+    
+    def reset_settings():
+        save_setting('window_height', '600')
+        save_setting('viewport_offset', '40')
+        dpg.set_viewport_height(600)
+        dpg.set_viewport_pos(calc_window_pos(40))
+        dpg.delete_item("settings_window")
+
+    with dpg.window(tag="settings_window", label="settings", width=300, height=300):
+        dpg.add_slider_int(label="window height", tag="height_slider",
+                           default_value=current_height, min_value=200, max_value=600)
+        dpg.add_slider_int(label="viewport offset", tag="offset_slider",
+                           default_value=current_offset, min_value=0, max_value=150)
+        with dpg.group(horizontal=True):
+            dpg.add_button(label="apply", callback=apply_settings)
+            dpg.add_button(label="reset settings", callback=reset_settings)
+
+
+def calc_window_pos(offset=40):
+    vpw, vph = dpg.get_viewport_width(), dpg.get_viewport_height()
+    
+    try:
+        primary = pymonctl.getPrimary()
+        if primary:
+            screen_width, screen_height = primary.size
+        else:
+            monitors = pymonctl.getAllMonitors()
+            if monitors:
+                screen_width, screen_height = monitors[0].size
+            else:
+                screen_width, screen_height = 1920, 1080
+    except Exception:
+        screen_width, screen_height = 1920, 1080
+
+    x, y = state._spawn_pos
+    left = max(0, min(x - vpw // 2, screen_width - vpw))
+    top = max(0, min(y - vph - offset, screen_height - vph))
+    return left, top
 
 def create_window():
 
-    def calc_window_pos():
-        vpw, vph = dpg.get_viewport_width(), dpg.get_viewport_height()
-        
-        try:
-            primary = pymonctl.getPrimary()
-            if primary:
-                screen_width, screen_height = primary.size
-            else:
-                monitors = pymonctl.getAllMonitors()
-                if monitors:
-                    screen_width, screen_height = monitors[0].size
-                else:
-                    screen_width, screen_height = 1920, 1080
-        except Exception:
-            screen_width, screen_height = 1920, 1080
-
-        x, y = state._spawn_pos
-        offset = 40
-        left = max(0, min(x - vpw // 2, screen_width - vpw))
-        top = max(0, min(y - vph - offset, screen_height - vph))
-        return left, top
-
     newbie_checker()
+    #load settings
+    win_height = int(get_setting('window_height','600'))
+    offset = int(get_setting('viewport_offset','600'))
+    # accent_color = get_setting('accent_color','ff7f0e')
+
+
     dpg.create_context()
-    dpg.create_viewport(title="closta", width=300, height=600, decorated=False)
-    dpg.set_viewport_pos(calc_window_pos())
+    dpg.create_viewport(title="closta", width=300, height=win_height, decorated=False)
+    dpg.set_viewport_pos(calc_window_pos(offset))
+    # apply accent color here
+
     with dpg.window(tag="closta"):
         dpg.add_text("closta", tag="h")
         with dpg.group(horizontal=True):
