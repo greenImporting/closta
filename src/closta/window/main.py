@@ -110,7 +110,11 @@ def edit_callback(sender,app_data,usr_data):
     dpg.delete_item(task_window)
 
 def settings_callback(sender, app_data, usr_data):
-    with dpg.window(tag="settings_window", width= 250, height=200, decorated=False):
+    #check if exist alrdy
+    if dpg.does_item_exist("settings_window"):
+        dpg.focus_item("settings_window")
+        return
+    with dpg.window(tag="settings_window", width= 200, height=200):
         dpg.add_text("settings")
 
 

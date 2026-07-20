@@ -1,5 +1,5 @@
 # closta
-> cute, light, open source tracking app.
+> concise, light, open source tracking app.
 
 ## placeholder text talking about how it works
 
