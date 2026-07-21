@@ -6,7 +6,7 @@ continue to follow PEP 8.
 ### main window
 - [x] create prim window
 - [x] destroys after unfocus
-- [/] main content
+- [x] main content
 - [x] task/tracking logic
 - [x] storage
 
@@ -24,6 +24,10 @@ continue to follow PEP 8.
 - [x] focus on open?
 
 ### bits and bobs
+- [ ] fix stupid (sub)heading size, add visual differenciation between heading, desc and buttons.
 - [ ] fix pyproject.toml
 - [ ] tests
-- [ ] push edit and delete buttons to bottom of child window.
+- [x] push edit and delete buttons to bottom of child window.
+- [ ] make importance mean something (highlight/priority in list)
+- [/] make description input larger, wrap text
+- [ ] fix edit window to be same as new task

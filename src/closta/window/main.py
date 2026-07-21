@@ -18,7 +18,7 @@ _lock = threading.Lock()
 current issues.
 - TODO: fix close then reopen when clicking on tray icon after 1sec debounce.
     i guess this happens becuase you unfocus, closing it, then reopen from left clicking on tray.
-- super ugly add task, must fix.
+- if you are lookign through this code im so sorry.
 - 
 
 """
@@ -40,9 +40,12 @@ def build_task(task_id, heading, description, importance: int, parent="task_cont
         dpg.add_separator()
         dpg.add_text(description,tag=f"desc_{task_id}", wrap=0 )
 
-        # dpg.add_spacer(height=5)
-        # dpg.add_separator()
-        with dpg.group(horizontal=True): #tag for later customisation
+        dpg.add_spacer(height=2)
+        dpg.add_separator()
+        dpg.add_spacer(height=2)
+        with dpg.group(tag=f"mod_btns_{task_id}", horizontal=True):
+            dpg.add_checkbox(label="completed")
+            dpg.add_spacer(height=20)
             dpg.add_button(label="edit", user_data=task_id, callback=edit_callback)
             dpg.add_button(label="delete", user_data=task_id, callback=delete_callback)
 
@@ -54,6 +57,7 @@ def load_tasks_ui(parent="task_container"):
     conn.close()
     for row in rows:
         build_task(row[0], row[1], row[2], row[3], parent=parent)
+
 
 def new_task(sender, app_data):
     if dpg.does_item_exist("new_task_win"):
@@ -72,11 +76,23 @@ def new_task(sender, app_data):
         dpg.delete_item("new_task_win")
         refresh_task_list()
 
-    with dpg.window(tag="new_task_win", label="new task", on_close=lambda: dpg.delete_item("new_task_win")):
-        dpg.add_input_text(tag="heading_input", label="heading")
-        dpg.add_input_text(tag="desc_input", label="description")
-        dpg.add_combo(items=[0,1,2], tag="imp_dropdown", default_value=0)
+    win_height = 200
+    win_width = 250
+    current_height = int(get_setting('window_height', '600'))
+    y = (current_height - win_height) // 2
+    x = (300 - win_width) // 2 # 300 is width of viewport
+
+    with dpg.window(tag="new_task_win", label="new task", width=win_width, height=win_height,
+                    no_title_bar=True, no_move=False, no_resize=True):
+        with dpg.group(horizontal=True):
+            dpg.add_input_text(tag="heading_input", hint="heading")
+            dpg.add_spacer(width=36)
+            dpg.add_button(label="x", callback=lambda: dpg.delete_item("new_task_win"))
+        dpg.add_input_text(tag="desc_input", hint="description", multiline=True)
+        dpg.add_combo(items=[0,1,2], tag="imp_dropdown", default_value=0, label="importance")
         dpg.add_button(label="add task", callback=save_new_task_callback)
+    
+    dpg.set_item_pos("new_task_win", (x, y))
 
 def edit_callback(sender,app_data,usr_data):
     task_id = usr_data
@@ -98,13 +114,21 @@ def edit_callback(sender,app_data,usr_data):
         dpg.delete_item("task_container", children_only=True)
         load_tasks_ui()
     
-    with dpg.window(tag=f"edit_win_{task_id}", label="edit task"):
-        dpg.add_input_text(tag=f"edit_heading_{task_id}", label="heading", default_value=row[0])
-        dpg.add_input_text(tag=f"edit_desc_{task_id}", label="description", default_value=row[1] or "")
-        dpg.add_combo(items=[0,1,2], tag=f"edit_imp_{task_id}", default_value=row[2], label="importance")
+    win_height = 200
+    win_width = 250
+    current_height = int(get_setting('window_height', '600'))
+    y = (current_height - win_height) // 2
+    x = (300 - win_width) // 2 # 300 is width of viewport
+
+    with dpg.window(tag=f"edit_win_{task_id}", label="edit task", width=win_width, height=win_height,
+                    no_title_bar=True, no_move=False, no_resize=True):
+        with dpg.group(horizontal=True):
+            dpg.add_input_text(tag=f"edit_heading_{task_id}", hint="heading", default_value=row[0])
+        dpg.add_input_text(tag=f"edit_desc_{task_id}", hint="description", default_value=row[1] or "", multiline=True)
+        dpg.add_combo(items=[0,1,2],tag=f"edit_imp_{task_id}", default_value=row[2], label="importance")
         dpg.add_button(label="save", callback=lambda: save_edit(task_id))
     
-
+    dpg.set_item_pos(f"edit_win_{task_id}", (x, y))
     parent_group = dpg.get_item_parent(sender)
     task_window = dpg.get_item_parent(parent_group)
     dpg.delete_item(task_window)
@@ -120,7 +144,7 @@ def settings_callback(sender, app_data, usr_data):
     def apply_settings():
         new_height = dpg.get_value("height_slider")
         new_offset = dpg.get_value("offset_slider")
-        # save
+        #save
         save_setting('window_height', new_height)
         save_setting('viewport_offset', new_offset)
         # apply to viewport
@@ -135,14 +159,27 @@ def settings_callback(sender, app_data, usr_data):
         dpg.set_viewport_pos(calc_window_pos(40))
         dpg.delete_item("settings_window")
 
-    with dpg.window(tag="settings_window", label="settings", width=300, height=300):
-        dpg.add_slider_int(label="window height", tag="height_slider",
-                           default_value=current_height, min_value=200, max_value=600)
-        dpg.add_slider_int(label="viewport offset", tag="offset_slider",
-                           default_value=current_offset, min_value=0, max_value=150)
+    win_height = 200
+    win_width = 250
+    y = (current_height - win_height) // 2
+    x = (300 - win_width) // 2 # 300 is width of viewport
+
+    with dpg.window(tag="settings_window", label="settings", width=win_width, height=win_height,
+                    no_title_bar=True, no_move=False, no_resize=True):
+        with dpg.group(horizontal=True):
+            dpg.add_text("settings", indent=10)
+            dpg.add_spacer(width=win_width - 118)
+            dpg.add_button(label="x", callback=lambda: dpg.delete_item("settings_window"))
+        dpg.add_separator()
+        dpg.add_text("window height")
+        dpg.add_slider_int(tag="height_slider", default_value=current_height, min_value=200, max_value=600, width=-1, label="")
+        dpg.add_text("viewport offset")
+        dpg.add_slider_int(tag="offset_slider", default_value=current_offset, min_value=0, max_value=150, width=-1, label="")
         with dpg.group(horizontal=True):
             dpg.add_button(label="apply", callback=apply_settings)
             dpg.add_button(label="reset settings", callback=reset_settings)
+
+        dpg.set_item_pos("settings_window", (x, y))
 
 
 def calc_window_pos(offset=40):
@@ -191,6 +228,7 @@ def create_window():
             # this will allow us to isolate task display into a single container
             # itll make it dead easy to clear existing task widgets when we add a new task.
     load_tasks_ui()
+
 
 
 def spawn_window():
