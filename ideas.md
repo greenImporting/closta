@@ -24,10 +24,12 @@ continue to follow PEP 8.
 - [x] focus on open?
 
 ### bits and bobs
-- [ ] fix stupid (sub)heading size, add visual differenciation between heading, desc and buttons.
-- [ ] fix pyproject.toml
+- [/] fix stupid (sub)heading size, add visual differenciation between heading, desc and buttons.
+- [x] fix pyproject.toml
 - [ ] tests
 - [x] push edit and delete buttons to bottom of child window.
-- [ ] make importance mean something (highlight/priority in list)
+- [x] make importance mean something (highlight/priority in list)
 - [/] make description input larger, wrap text
-- [ ] fix edit window to be same as new task
+- [x] fix edit window to be same as new task
+- [x] starting new has weird settings
+- [x] error when trying to save a task with no content
