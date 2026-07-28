@@ -11,6 +11,8 @@ import pyautogui
 import sys
 
 _last_spawn_time = 0
+_window_thread = None
+_thread_lock = threading.Lock()
 
 
 def resource_path(relative_path):
@@ -21,22 +23,24 @@ def resource_path(relative_path):
     return base / relative_path
 
 def spawn_closta(icon, item):
-    global _last_spawn_time
+    global _last_spawn_time, _window_thread
     
     now = time.time()
     if now - _last_spawn_time < 1.0:
         return
     _last_spawn_time = now
 
-    if state.WINDOW_RUNNING:
-        return
-    else:
+    with _thread_lock:
+        if _window_thread is not None and _window_thread.is_alive():
+            return
         state._spawn_pos = pyautogui.position()
-        threading.Thread(target=cwin.spawn_window, daemon=True).start()
+        _window_thread = threading.Thread(target=cwin.spawn_window, daemon=True)
+        _window_thread.start()
 
 def exit_sequence(icon, item):
     state._graceful_tray_exit = True
     icon.stop()
+    os._exit(0)
 
 
 def build_menu(ico):

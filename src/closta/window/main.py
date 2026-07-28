@@ -276,14 +276,14 @@ def create_window():
             # itll make it dead easy to clear existing task widgets when we add a new task.
     load_tasks_ui()
 
+    
+def set_fonts():
+    with dpg.font_registry():
+        heading_font = dpg.add_font("C:/Windows/Fonts/arial.ttf", size=24)
+        dpg.bind_item_font("h", heading_font)
 
 
 def spawn_window():
-    
-    def set_fonts():
-        with dpg.font_registry():
-            heading_font = dpg.add_font("C:/Windows/Fonts/arial.ttf", size=24)
-            dpg.bind_item_font("h", heading_font)
 
     with _lock:
         if state.WINDOW_RUNNING:
