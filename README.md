@@ -7,9 +7,12 @@ simple tracker to track little tasks that you might set yourself.
 
 made using python and dearpygui gui lib. currently only windows :P
 
-## building guide
+## usage guide
 
-placeholder placeholder. UV!!!!
+### using pyinstaller
+
+
+### running from source
 
 ## known issues
 

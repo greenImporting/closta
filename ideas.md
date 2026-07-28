@@ -22,7 +22,8 @@ continue to follow PEP 8.
 - [x] open window using tray icon
 - [x] window location spawn control
 - [x] focus on open?
-
+- [ ] fix reopening window causes more ram usage
+ 
 ### bits and bobs
 - [/] fix stupid (sub)heading size, add visual differenciation between heading, desc and buttons.
 - [x] fix pyproject.toml

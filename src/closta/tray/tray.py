@@ -8,8 +8,17 @@ import threading
 import os
 import time
 import pyautogui
+import sys
 
 _last_spawn_time = 0
+
+
+def resource_path(relative_path):
+    if getattr(sys, 'frozen', False):
+        base = Path(sys._MEIPASS)
+    else:
+        base = Path(__file__).resolve().parent.parent.parent  # adjust for dev
+    return base / relative_path
 
 def spawn_closta(icon, item):
     global _last_spawn_time
@@ -28,8 +37,6 @@ def spawn_closta(icon, item):
 def exit_sequence(icon, item):
     state._graceful_tray_exit = True
     icon.stop()
-    # just incase tray lingers, force exit
-    os._exit(0)
 
 
 def build_menu(ico):
@@ -40,7 +47,7 @@ def build_menu(ico):
 
 
 def create_tray():
-    imgpath = Path(__file__).resolve().parent / ".." / ".." / ".." / "assets" / "closta_tray.png"
+    imgpath = resource_path("assets/closta_tray.png")
     trayico = Image.open(imgpath)
     closta_tray = pystray.Icon("uhhh", icon=trayico)
     closta_tray.menu = build_menu(closta_tray)

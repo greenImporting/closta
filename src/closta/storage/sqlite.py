@@ -3,6 +3,8 @@ import dearpygui.dearpygui as dpg
 
 db_name = 'closta.db'
 
+#TODO: file path for db, live in app data?
+
 def init_db():
     conn = sqlite3.connect(db_name)
     c = conn.cursor()
