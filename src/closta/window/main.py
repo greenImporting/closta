@@ -5,6 +5,7 @@ import threading
 import time
 import logging
 import pymonctl
+import ctypes
 from closta import state
 from closta.storage.sqlite import delete_callback, save_task, init_db, db_name, edit_task, get_setting, save_setting
 from pathlib import Path
@@ -14,12 +15,14 @@ logging.basicConfig(level=logging.ERROR, format="%(asctime)s - %(levelname)s - %
 IMP_MAP = {"low":0, "medium":1, "high": 2} # map for importance, as i save it as an int.
 REV_IMP = {0:"low", 1:"medium", 2:"high"} # reverse importance map, for editing callback.
 _lock = threading.Lock()
+user32 = ctypes.windll.user32
 """
 
 current issues.
-- TODO: fix close then reopen when clicking on tray icon after 1sec debounce.
-    i guess this happens becuase you unfocus, closing it, then reopen from left clicking on tray.
-- if you are lookign through this code im so sorry.
+- TODO: fixing mem leak issue
+    -> to do with viewport handling by dearpygui, and it's incorrect way of freeing memory
+    -> currently, we kill and spawn a new viewport every time, causing an increase of
+    -> atleast 10~mb of ram each window cycle. major issue for a program like this.
 - 
 
 """
