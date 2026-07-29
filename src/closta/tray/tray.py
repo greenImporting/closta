@@ -11,12 +11,7 @@ import pyautogui
 import sys
 
 def resource_path(relative_path):
-    if "__compiled__" in globals():
-        base = Path(__file__).resolve().parent
-    else:
-        base = Path(__file__).resolve().parent.parent.parent
-
-    return base / relative_path
+    return Path(__file__).resolve().parent.parent.parent / relative_path
     
 def show_closta():
     if state._window_ready:
@@ -59,3 +54,6 @@ def main():
 
     while True:
         sleep(3600)
+
+if __name__ == "__main__":
+    main()
