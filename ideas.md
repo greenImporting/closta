@@ -39,3 +39,4 @@ continue to follow PEP 8.
 - [ ] investigate minute memory increase after alot of reopens
 - [/] hide cmd on nuitka onefile + change icons of exe
 - [x] building onefile does not recognise db after replay.
+- [ ] better build it yourself script.
