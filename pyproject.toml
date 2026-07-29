@@ -10,7 +10,7 @@ dependencies = [
     "pymonctl",
     "pillow",
     "pyautogui",
-    "pywin32"m
+    "pywin32",
 ]
 
 [dependency-groups]

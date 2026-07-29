@@ -4,9 +4,6 @@ import os
 from pathlib import Path
 from closta.paths import DB_PATH
 
-
-#TODO: file path for db, live in app data?
-
 def init_db():
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()

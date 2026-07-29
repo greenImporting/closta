@@ -19,7 +19,6 @@ def resource_path(relative_path):
     return base / relative_path
     
 def show_closta():
-    
     if state._window_ready:
         state._show_requested = True
         
