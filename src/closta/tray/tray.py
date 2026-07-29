@@ -53,7 +53,9 @@ def create_tray():
     closta_tray.menu = build_menu(closta_tray)
     threading.Thread(target=closta_tray.run, daemon=True).start()
 
-create_tray()
-init_closta()
-while True:
-    sleep(3600)
+def main():
+    create_tray()
+    init_closta()
+
+    while True:
+        sleep(3600)

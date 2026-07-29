@@ -9,7 +9,7 @@ python -m nuitka `
     --windows-icon-from-ico=src/assets/closta_tray.ico `
     --include-data-dir=src/assets=assets `
     --output-filename=closta.exe `
-    src/closta/tray/tray.py
+    src/closta/__main__.py
 
 if ($LASTEXITCODE -ne 0) {
     write-host 'build failed'
