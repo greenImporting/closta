@@ -13,13 +13,7 @@ tested on a 1080p screen with 100% scale. untested issues may arise with larger 
 ### building an exe with nuitka
 
 1. `git clone https://github.com/greenImporting/closta.git`
-2. check if uv is installed. if not: install using (open powershell):
-   ```powershell
-   powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
-   ```
-3. `uv sync --extra dev`
-4. `.venv\scripts\activate`
-5. run `.\BUILD_NUITKA_ONEFILE.ps1`
+2. run `.\BUILD_NUITKA_ONEFILE.ps1`
 
 ### running from source
 
