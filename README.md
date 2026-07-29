@@ -12,15 +12,14 @@ tested on a 1080p screen with 100% scale. untested issues may arise with larger 
 
 ### building an exe with nuitka
 
-1. check if uv is installed. if not: install using (open powershell):
+1. `git clone https://github.com/greenImporting/closta.git`
+2. check if uv is installed. if not: install using (open powershell):
    ```powershell
    powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
    ```
-2. `uv sync --extra dev`
-3. `.venv\scripts\activate`
-4. use `python -m nuitka` to create executable pointing to `src\closta\tray\tray.py`
-
-note: there might be an issue with finding the path to assets.
+3. `uv sync --extra dev`
+4. `.venv\scripts\activate`
+5. run `.\BUILD_NUITKA_ONEFILE.ps1`
 
 ### running from source
 

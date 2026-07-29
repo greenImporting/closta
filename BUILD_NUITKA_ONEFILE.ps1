@@ -23,3 +23,5 @@ if ($choice -eq 'y') {
     copy-item .\closta.exe $dest -force
     start-process $dest
 }
+
+write-host 'thanks for building & using my app! you might get it stolen by defender though.'
