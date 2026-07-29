@@ -10,11 +10,6 @@ import time
 import pyautogui
 import sys
 
-_last_spawn_time = 0
-_window_thread = None
-_thread_lock = threading.Lock()
-
-
 def resource_path(relative_path):
     if getattr(sys, 'frozen', False):
         base = Path(sys._MEIPASS)
@@ -22,20 +17,19 @@ def resource_path(relative_path):
         base = Path(__file__).resolve().parent.parent.parent  # adjust for dev
     return base / relative_path
 
-def spawn_closta(icon, item):
-    global _last_spawn_time, _window_thread
-    
-    now = time.time()
-    if now - _last_spawn_time < 1.0:
-        return
-    _last_spawn_time = now
+def show_closta():
+    if state._window_ready:
+        cwin.view_window(show=True, hwnd=state._hwnd)
 
-    with _thread_lock:
-        if _window_thread is not None and _window_thread.is_alive():
-            return
-        state._spawn_pos = pyautogui.position()
-        _window_thread = threading.Thread(target=cwin.spawn_window, daemon=True)
-        _window_thread.start()
+def init_closta():
+    state._spawn_pos = pyautogui.position()
+    _window_thread = threading.Thread(target=cwin.main, daemon=True)
+    _window_thread.start()
+    if state._window_ready.wait(timeout=5):
+
+        cwin.view_window(show=False, hwnd=state._hwnd)
+
+
 
 def exit_sequence(icon, item):
     state._graceful_tray_exit = True
@@ -45,7 +39,7 @@ def exit_sequence(icon, item):
 
 def build_menu(ico):
     return pystray.Menu(
-        pystray.MenuItem("spawn closta", spawn_closta, default=True),
+        pystray.MenuItem("show closta", show_closta, default=True),
         pystray.MenuItem("exit", exit_sequence)
     )
 
@@ -58,5 +52,6 @@ def create_tray():
     threading.Thread(target=closta_tray.run, daemon=True).start()
 
 create_tray()
+init_closta()
 while True:
     sleep(3600)

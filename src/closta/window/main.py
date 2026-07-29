@@ -6,6 +6,7 @@ import time
 import logging
 import pymonctl
 import ctypes
+import win32gui
 from closta import state
 from closta.storage.sqlite import delete_callback, save_task, init_db, db_name, edit_task, get_setting, save_setting
 from pathlib import Path
@@ -14,8 +15,10 @@ logging.basicConfig(level=logging.ERROR, format="%(asctime)s - %(levelname)s - %
 
 IMP_MAP = {"low":0, "medium":1, "high": 2} # map for importance, as i save it as an int.
 REV_IMP = {0:"low", 1:"medium", 2:"high"} # reverse importance map, for editing callback.
-_lock = threading.Lock()
 user32 = ctypes.windll.user32
+_last_shown_time = 0
+state._window_ready = threading.Event()
+
 """
 
 current issues.
@@ -23,6 +26,10 @@ current issues.
     -> to do with viewport handling by dearpygui, and it's incorrect way of freeing memory
     -> currently, we kill and spawn a new viewport every time, causing an increase of
     -> atleast 10~mb of ram each window cycle. major issue for a program like this.
+
+    ^ should be done. TODO: check
+
+- fix centererd viewport on db init ( most likely caused by newbie_checker() )
 - 
 
 """
@@ -46,7 +53,7 @@ def newbie_checker():
             dpg.add_text("the concise, light, open source \ntracking app!")
             dpg.add_text("made with love \nby greenImporting")
         dpg.set_item_pos("welcome_win", (x,y))
-        return True
+        return
     
         
         
@@ -59,11 +66,9 @@ def newbie_checker():
         init_db()
         welcome_popup()
         # just setting initial settings
-        save_setting('window_height', '600')
-        save_setting('viewport_offset', '40')
         
 
-    return False
+    return
 
 def build_task(task_id, heading, description, importance: int, parent="task_container"):
     """
@@ -254,16 +259,34 @@ def calc_window_pos(offset=40):
     left = max(0, min(x - vpw // 2, screen_width - vpw))
     top = max(0, min(y - vph - offset, screen_height - vph))
     return left, top
+    
+def set_fonts():
+    with dpg.font_registry():
+        heading_font = dpg.add_font("C:/Windows/Fonts/arial.ttf", size=24)
+        dpg.bind_item_font("h", heading_font)
+
+def view_window(show: bool,hwnd):
+    global closta_win, _last_shown_time
+    _last_shown_time = time.time()
+    if show == True:
+        user32.ShowWindow(hwnd, 5)
+        closta_windows = pwc.getWindowsWithTitle('closta')
+        if closta_windows:
+            closta_win = closta_windows[0]
+            closta_win.activate()
+            user32.SetForegroundWindow(hwnd) # just cuz why not 
+    else:
+        user32.ShowWindow(hwnd, 0)
 
 def create_window():
-
     dpg.create_context()
-    first_load = newbie_checker()
     #load settings
+    newbie_checker()
     win_height = int(get_setting('window_height','600'))
-    offset = int(get_setting('viewport_offset','600'))
+    offset = int(get_setting('viewport_offset','40'))
     # accent_color = get_setting('accent_color','ff7f0e')
     dpg.create_viewport(title="closta", width=300, height=win_height, decorated=False)
+    
     dpg.set_viewport_pos(calc_window_pos(offset))
     # apply accent color here
 
@@ -276,56 +299,36 @@ def create_window():
         with dpg.group(tag="task_container"):
             pass
             # this will allow us to isolate task display into a single container
-            # itll make it dead easy to clear existing task widgets when we add a new task.
-    load_tasks_ui()
 
-    
-def set_fonts():
-    with dpg.font_registry():
-        heading_font = dpg.add_font("C:/Windows/Fonts/arial.ttf", size=24)
-        dpg.bind_item_font("h", heading_font)
+def run_gui():
+    create_window()
+    dpg.setup_dearpygui()
+    dpg.show_viewport()
+    state._hwnd = win32gui.FindWindow(None, "closta")
+    state._window_ready.set()
+    set_fonts()
+    dpg.set_primary_window("closta", True)
+
+def main():
+    run_gui()
+    closta_windows = pwc.getWindowsWithTitle('closta')
+    closta_win = None
+    if closta_windows:
+        closta_win = closta_windows[0]
+        closta_win.activate()
+        # not sure if dup code is the way to go, but 
+        # i cant figure out if i should make it a global or not
+    _first_focus = False
+    view_window(show=False,hwnd=state._hwnd)
+    while dpg.is_dearpygui_running():
+        dpg.render_dearpygui_frame()
+        if state._graceful_tray_exit:
+            break
+        if closta_win and closta_win.isActive:
+            _first_focus = True
+        elif _first_focus and (time.time() - _last_shown_time > 0.3):
+            view_window(show=False, hwnd=state._hwnd)
 
 
-def spawn_window():
-
-    with _lock:
-        if state.WINDOW_RUNNING:
-            logging.info("window is running")
-            return
-        state._graceful_tray_exit = False
-        state.WINDOW_RUNNING = True
-        # fyi: checking using is dearpygui running before creating everythign will give it a heart attack
-        try:
-            create_window()
-            dpg.setup_dearpygui()
-
-            dpg.show_viewport()
-            set_fonts()
-            dpg.set_primary_window("closta", True)
-
-            
-            # ---- focus logic start ----
-            # debugging this was hell, spent like 3 hours figuring out that i needed .activate() ;)
-            # breaks if window isnt focused.
-            closta_windows = pwc.getWindowsWithTitle('closta')
-            if closta_windows:
-                closta_win = closta_windows[0]
-                closta_win.activate()
-            
-            _first_focus = False
-            while dpg.is_dearpygui_running():
-                dpg.render_dearpygui_frame()
-                if state._graceful_tray_exit:
-                    break
-
-                if closta_win.isActive:
-                    _first_focus = True
-                elif _first_focus:
-                    break
-        finally:
-            dpg.destroy_context()
-            state.WINDOW_RUNNING = False
-        
 if __name__ == "__main__":
-    spawn_window()
-
+    main()
