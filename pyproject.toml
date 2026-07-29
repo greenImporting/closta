@@ -10,9 +10,15 @@ dependencies = [
     "pymonctl",
     "pillow",
     "pyautogui",
+    "pywin32"m
 ]
 
 [dependency-groups]
 test = [
     "pytest>=8.3.5",
+]
+
+[project.optional-dependencies]
+dev = [
+    "nuitka",
 ]

@@ -11,15 +11,18 @@ import pyautogui
 import sys
 
 def resource_path(relative_path):
-    if getattr(sys, 'frozen', False):
-        base = Path(sys._MEIPASS)
+    if "__compiled__" in globals():
+        base = Path(__file__).resolve().parent
     else:
-        base = Path(__file__).resolve().parent.parent.parent  # adjust for dev
-    return base / relative_path
+        base = Path(__file__).resolve().parent.parent.parent
 
+    return base / relative_path
+    
 def show_closta():
+    
     if state._window_ready:
         cwin.view_window(show=True, hwnd=state._hwnd)
+        
 
 def init_closta():
     state._spawn_pos = pyautogui.position()

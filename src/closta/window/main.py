@@ -1,5 +1,4 @@
 import dearpygui.dearpygui as dpg
-import pywinctl as pwc
 import sqlite3
 import threading
 import time
@@ -8,7 +7,8 @@ import pymonctl
 import ctypes
 import win32gui
 from closta import state
-from closta.storage.sqlite import delete_callback, save_task, init_db, db_name, edit_task, get_setting, save_setting
+from closta.storage.sqlite import delete_callback, save_task, init_db, edit_task, get_setting, save_setting
+from closta.paths import DB_PATH
 from pathlib import Path
 
 logging.basicConfig(level=logging.ERROR, format="%(asctime)s - %(levelname)s - %(message)s")
@@ -29,7 +29,6 @@ current issues.
 
     ^ should be done. TODO: check
 
-- fix centererd viewport on db init ( most likely caused by newbie_checker() )
 - 
 
 """
@@ -40,6 +39,7 @@ def get_centered_pos(win_width: int, win_height: int, first_run=False) -> tuple[
         y = (current_height - win_height) // 2
     else:
         y = (600 - win_height) // 2 # only for first run 
+
     x = (300 - win_width) // 2
     return x, y
 
@@ -56,12 +56,8 @@ def newbie_checker():
         return
     
         
-        
-
-    # checks if youre new. if so, init db. TODO: give lovely welcome message.
-    db_path = Path(__file__).resolve().parent / ".." / ".." / ".."
-    uhh = db_path / "closta.db"
-    if not uhh.is_file():
+    # checks if youre new. if so, init db.
+    if not DB_PATH.is_file():
         print("welcome! initialising a db.")
         init_db()
         welcome_popup()
@@ -97,7 +93,7 @@ def build_task(task_id, heading, description, importance: int, parent="task_cont
             dpg.add_button(label="delete", user_data=task_id, callback=delete_callback, height=20)
 
 def load_tasks_ui(parent="task_container"):
-    conn = sqlite3.connect(db_name)
+    conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
     c.execute('SELECT id, name, description, importance FROM tasks')
     rows = c.fetchall()
@@ -154,7 +150,7 @@ def new_task(sender, app_data):
 
 def edit_callback(sender,app_data,usr_data):
     task_id = usr_data
-    conn = sqlite3.connect(db_name)
+    conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
 
     c.execute('SELECT name, description, importance FROM tasks WHERE id=?', (task_id,))
@@ -197,24 +193,28 @@ def settings_callback(sender, app_data, usr_data):
         return
 
     current_height = int(get_setting('window_height', '600'))
-    current_offset = int(get_setting('viewport_offset', '40'))
+    current_x_offset = int(get_setting('viewport_x_offset', '10'))
+    current_y_offset = int(get_setting('viewport_y_offset', '10'))
 
     def apply_settings():
         new_height = dpg.get_value("height_slider")
-        new_offset = dpg.get_value("offset_slider")
+        new_x_offset = dpg.get_value("x_offset_slider")
+        new_y_offset = dpg.get_value("y_offset_slider")
         #save
         save_setting('window_height', new_height)
-        save_setting('viewport_offset', new_offset)
+        save_setting('viewport_x_offset', new_x_offset)
+        save_setting('viewport_y_offset', new_y_offset)
         # apply to viewport
         dpg.set_viewport_height(new_height)
-        dpg.set_viewport_pos(calc_window_pos(new_offset))
+        dpg.set_viewport_pos(calc_window_pos(new_x_offset,new_y_offset))
         dpg.delete_item("settings_window")
     
     def reset_settings():
         save_setting('window_height', '600')
-        save_setting('viewport_offset', '40')
+        save_setting('viewport_x_offset', '10')
+        save_setting('viewport_y_offset', '10')
         dpg.set_viewport_height(600)
-        dpg.set_viewport_pos(calc_window_pos(40))
+        dpg.set_viewport_pos(calc_window_pos(10,10))
         dpg.delete_item("settings_window")
 
     win_height = 200
@@ -230,35 +230,41 @@ def settings_callback(sender, app_data, usr_data):
         dpg.add_separator()
         dpg.add_text("window height")
         dpg.add_slider_int(tag="height_slider", default_value=current_height, min_value=200, max_value=600, width=-1, label="")
-        dpg.add_text("viewport offset")
-        dpg.add_slider_int(tag="offset_slider", default_value=current_offset, min_value=0, max_value=150, width=-1, label="")
+        dpg.add_text("viewport x offset")
+        dpg.add_slider_int(tag="x_offset_slider", default_value=current_x_offset, min_value=0, max_value=150, width=-1, label="")
+        dpg.add_text("viewport y offset")
+        dpg.add_slider_int(tag="y_offset_slider", default_value=current_y_offset, min_value=0, max_value=150, width=-1, label="")
         with dpg.group(horizontal=True):
             dpg.add_button(label="apply", callback=apply_settings)
             dpg.add_button(label="reset settings", callback=reset_settings)
 
         dpg.set_item_pos("settings_window", (x, y))
-
-
-def calc_window_pos(offset=40):
-    vpw, vph = dpg.get_viewport_width(), dpg.get_viewport_height()
     
-    try:
-        primary = pymonctl.getPrimary()
-        if primary:
-            screen_width, screen_height = primary.size
-        else:
-            monitors = pymonctl.getAllMonitors()
-            if monitors:
-                screen_width, screen_height = monitors[0].size
-            else:
-                screen_width, screen_height = 1920, 1080
-    except Exception:
-        screen_width, screen_height = 1920, 1080
 
-    x, y = state._spawn_pos
-    left = max(0, min(x - vpw // 2, screen_width - vpw))
-    top = max(0, min(y - vph - offset, screen_height - vph))
-    return left, top
+
+def calc_window_pos(x_offset=10, y_offset=10):
+    '''
+    uses systemparametersinfow with spi_getworkarea (0x0030) to retrieve the screen's work area (the desktop excluding the taskbar).
+    then positions window to bottom right corner
+    '''
+    vpw, vph = dpg.get_viewport_width(), dpg.get_viewport_height()
+
+    rect = ctypes.wintypes.RECT()
+
+    ctypes.windll.user32.SystemParametersInfoW(
+        0x0030,
+        0,
+        ctypes.byref(rect),
+        0
+    )
+
+    x = rect.right - vpw - x_offset
+    y = rect.bottom - vph - y_offset
+    x = max(rect.left, x)
+    y = max(rect.top, y)
+    return x, y
+
+    
     
 def set_fonts():
     with dpg.font_registry():
@@ -268,13 +274,9 @@ def set_fonts():
 def view_window(show: bool,hwnd):
     global closta_win, _last_shown_time
     _last_shown_time = time.time()
-    if show == True:
+    if show:
         user32.ShowWindow(hwnd, 5)
-        closta_windows = pwc.getWindowsWithTitle('closta')
-        if closta_windows:
-            closta_win = closta_windows[0]
-            closta_win.activate()
-            user32.SetForegroundWindow(hwnd) # just cuz why not 
+        user32.SetForegroundWindow(hwnd)
     else:
         user32.ShowWindow(hwnd, 0)
 
@@ -283,11 +285,12 @@ def create_window():
     #load settings
     newbie_checker()
     win_height = int(get_setting('window_height','600'))
-    offset = int(get_setting('viewport_offset','40'))
+    current_x_offset = int(get_setting('viewport_x_offset', '10'))
+    current_y_offset = int(get_setting('viewport_y_offset', '10'))
     # accent_color = get_setting('accent_color','ff7f0e')
     dpg.create_viewport(title="closta", width=300, height=win_height, decorated=False)
     
-    dpg.set_viewport_pos(calc_window_pos(offset))
+    dpg.set_viewport_pos(calc_window_pos(current_x_offset, current_y_offset))
     # apply accent color here
 
     with dpg.window(tag="closta"):
@@ -299,6 +302,7 @@ def create_window():
         with dpg.group(tag="task_container"):
             pass
             # this will allow us to isolate task display into a single container
+    load_tasks_ui()
 
 def run_gui():
     create_window()
@@ -311,20 +315,14 @@ def run_gui():
 
 def main():
     run_gui()
-    closta_windows = pwc.getWindowsWithTitle('closta')
-    closta_win = None
-    if closta_windows:
-        closta_win = closta_windows[0]
-        closta_win.activate()
-        # not sure if dup code is the way to go, but 
-        # i cant figure out if i should make it a global or not
+    user32.SetForegroundWindow(state._hwnd)
     _first_focus = False
     view_window(show=False,hwnd=state._hwnd)
     while dpg.is_dearpygui_running():
         dpg.render_dearpygui_frame()
         if state._graceful_tray_exit:
             break
-        if closta_win and closta_win.isActive:
+        if user32.GetForegroundWindow() == state._hwnd:
             _first_focus = True
         elif _first_focus and (time.time() - _last_shown_time > 0.3):
             view_window(show=False, hwnd=state._hwnd)

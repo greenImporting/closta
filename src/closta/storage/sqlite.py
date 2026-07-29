@@ -1,12 +1,14 @@
 import sqlite3
 import dearpygui.dearpygui as dpg
+import os
+from pathlib import Path
+from closta.paths import DB_PATH
 
-db_name = 'closta.db'
 
 #TODO: file path for db, live in app data?
 
 def init_db():
-    conn = sqlite3.connect(db_name)
+    conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
 
     # tasks 
@@ -24,7 +26,7 @@ def init_db():
     conn.close()
 
 def save_task(name, description=None, importance=0):
-    conn = sqlite3.connect(db_name)
+    conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
 
     c.execute('INSERT INTO tasks (name, description, importance) values (?, ?, ?)',
@@ -35,7 +37,7 @@ def save_task(name, description=None, importance=0):
     conn.close()
 
 def edit_task(name, description, importance, task_id):
-    conn = sqlite3.connect(db_name)
+    conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
 
     c.execute('UPDATE tasks SET name=?, description=?, importance=? WHERE id=?',
@@ -46,7 +48,7 @@ def edit_task(name, description, importance, task_id):
     conn.close()
 
 def get_setting(key, default=None):
-    conn = sqlite3.connect(db_name)
+    conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
 
     c.execute('SELECT value FROM settings WHERE key=?', (key,))
@@ -56,7 +58,7 @@ def get_setting(key, default=None):
     return row[0] if row else default
 
 def save_setting(key, value):
-    conn = sqlite3.connect(db_name)
+    conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
 
     c.execute('REPLACE INTO settings (key, value) VALUES (?, ?)', (key, str(value)))
@@ -66,7 +68,7 @@ def save_setting(key, value):
     
 def delete_callback(sender, app_data, usr_data):
     task_id = usr_data
-    conn = sqlite3.connect(db_name)
+    conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
 
     c.execute('DELETE FROM tasks WHERE id = ?', (task_id,))
