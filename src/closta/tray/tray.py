@@ -21,7 +21,7 @@ def resource_path(relative_path):
 def show_closta():
     
     if state._window_ready:
-        cwin.view_window(show=True, hwnd=state._hwnd)
+        state._show_requested = True
         
 
 def init_closta():

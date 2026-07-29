@@ -275,10 +275,10 @@ def view_window(show: bool,hwnd):
     global closta_win, _last_shown_time
     _last_shown_time = time.time()
     if show:
-        user32.ShowWindow(hwnd, 5)
+        user32.ShowWindowAsync(hwnd, 5)
         user32.SetForegroundWindow(hwnd)
     else:
-        user32.ShowWindow(hwnd, 0)
+        user32.ShowWindowAsync(hwnd, 0)
 
 def create_window():
     dpg.create_context()
@@ -319,13 +319,17 @@ def main():
     _first_focus = False
     view_window(show=False,hwnd=state._hwnd)
     while dpg.is_dearpygui_running():
-        dpg.render_dearpygui_frame()
+        
+        if state._show_requested:
+            state._show_requested = False
+            view_window(True, state._hwnd)
         if state._graceful_tray_exit:
             break
         if user32.GetForegroundWindow() == state._hwnd:
             _first_focus = True
         elif _first_focus and (time.time() - _last_shown_time > 0.3):
             view_window(show=False, hwnd=state._hwnd)
+        dpg.render_dearpygui_frame()
 
 
 if __name__ == "__main__":
