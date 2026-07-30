@@ -13,7 +13,8 @@ def init_db():
             (id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL,
             description TEXT,
-            importance INTEGER)''')
+            importance INTEGER,
+            completed INTEGER)''')
 
     # settings
     c.execute('''CREATE TABLE IF NOT EXISTS settings
@@ -60,6 +61,13 @@ def save_setting(key, value):
 
     c.execute('REPLACE INTO settings (key, value) VALUES (?, ?)', (key, str(value)))
 
+    conn.commit()
+    conn.close()
+
+def update_task_completion(task_id, completed):
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+    c.execute('UPDATE tasks SET completed = ? WHERE id = ?', (completed, task_id))
     conn.commit()
     conn.close()
     

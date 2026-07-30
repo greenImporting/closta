@@ -9,6 +9,7 @@ continue to follow PEP 8.
 - [x] main content
 - [x] task/tracking logic
 - [x] storage
+- [ ] if no description, remove spacing and second bar
 
 ### settings
 - [x] settings window
@@ -36,7 +37,7 @@ continue to follow PEP 8.
 - [x] error when trying to save a task with no content
 - [ ] make double click of tray in 1.5s~ timeframe close and not reopen
 - [x] x offset with tray icon pos
-- [ ] investigate minute memory increase after alot of reopens
-- [/] hide cmd on nuitka onefile + change icons of exe
+- [/] investigate minute memory increase after alot of reopens
+- [x] hide cmd on nuitka onefile + change icons of exe
 - [x] building onefile does not recognise db after replay.
 - [x] better build it yourself script.

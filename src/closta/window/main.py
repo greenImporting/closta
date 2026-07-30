@@ -7,7 +7,7 @@ import pymonctl
 import ctypes
 import win32gui
 from closta import state
-from closta.storage.sqlite import delete_callback, save_task, init_db, edit_task, get_setting, save_setting
+from closta.storage.sqlite import delete_callback, save_task, init_db, edit_task, get_setting, save_setting, update_task_completion
 from closta.paths import DB_PATH
 from pathlib import Path
 
@@ -22,12 +22,6 @@ state._window_ready = threading.Event()
 """
 
 current issues.
-- TODO: fixing mem leak issue
-    -> to do with viewport handling by dearpygui, and it's incorrect way of freeing memory
-    -> currently, we kill and spawn a new viewport every time, causing an increase of
-    -> atleast 10~mb of ram each window cycle. major issue for a program like this.
-
-    ^ should be done. TODO: check
 
 - 
 
@@ -64,13 +58,20 @@ def newbie_checker():
         # just setting initial settings
         
 
-    return
+    return 
 
-def build_task(task_id, heading, description, importance: int, parent="task_container"):
+
+def build_task(task_id, heading, description, importance: int, completed: int, parent="task_container"):
     """
     function to be ran to create a task. arguments to be
     title, description, importance TODO:extra metadata such as time
     """
+
+    def toggle_completed(sender, app_data, user_data):
+        task_id = user_data
+        completed = 1 if dpg.get_value(sender) else 0
+        update_task_completion(task_id, completed)
+
     with dpg.child_window(height=200,horizontal_scrollbar=False, parent=parent):
         with dpg.group(horizontal=True):
             # heaiding+ imoprtance
@@ -87,7 +88,12 @@ def build_task(task_id, heading, description, importance: int, parent="task_cont
         dpg.add_separator()
         dpg.add_spacer(height=2)
         with dpg.group(tag=f"mod_btns_{task_id}", horizontal=True):
-            dpg.add_checkbox(label="completed")
+
+            dpg.add_checkbox(label="completed",
+                            tag=f"completed_{task_id}",
+                            default_value = completed == 1,
+                            callback=toggle_completed,
+                            user_data=task_id)
             dpg.add_spacer(height=20)
             dpg.add_button(label="edit", user_data=task_id, callback=edit_callback, height=20)
             dpg.add_button(label="delete", user_data=task_id, callback=delete_callback, height=20)
@@ -95,11 +101,11 @@ def build_task(task_id, heading, description, importance: int, parent="task_cont
 def load_tasks_ui(parent="task_container"):
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
-    c.execute('SELECT id, name, description, importance FROM tasks')
+    c.execute('SELECT id, name, description, importance, completed FROM tasks')
     rows = c.fetchall()
     conn.close()
     for row in rows:
-        build_task(row[0], row[1], row[2], row[3], parent=parent)
+        build_task(row[0], row[1], row[2], row[3], row[4], parent=parent)
 
 
 def new_task(sender, app_data):
