@@ -51,3 +51,9 @@ you can download the exe or the archive. the standalone exe has a high chance of
 - add a heirarchy system for showing more important tasks towards the top
 - add support for scheduling, such as time and dates
 - add debounce, after that, clicking closta tray will close window instead of reopen new one.
+
+---
+
+## acknowledgement
+
+<small>this project used deepseek for documentation assistance. minor portions of code were ai generated and subsequently modified and reviewed by me.</small>
