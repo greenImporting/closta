@@ -9,6 +9,10 @@ import os
 import time
 import pyautogui
 import sys
+import ctypes
+
+user32 = ctypes.windll.user32
+
 
 def resource_path(relative_path):
     return Path(__file__).resolve().parent.parent.parent / relative_path

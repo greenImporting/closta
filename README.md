@@ -17,9 +17,9 @@ tested on a 1080p screen with 100% scale. issues may arise with larger screens/s
 
 ### download from releases
 
-you can download the exe or the archive. the exe has a higher chance of getting flagged by defender.
+you can download the exe or the archive. the standalone exe has a high chance of getting flagged by defender.
 
-- **exe** – double click to run. closta icon will be spotted in the tray.
+- **standalone exe** – double click to run. closta icon will be spotted in the tray.
 - **archive** – extract to a local folder, such as documents or desktop. then run exe. closta icon will be spotted in tray.
 
 ### building an exe with nuitka
