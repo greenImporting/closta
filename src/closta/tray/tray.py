@@ -59,7 +59,6 @@ def create_tray():
     # big credits to https://github.com/hiroshil/Win32Gui_learning/blob/main/Shell32__Shell_NotifyIcon_ex1.py
     # great file to understand the tray loguic
     global notify_info
-    win32gui.LoadImage(0, str(resource_path("assets/closta_tray.ico")), win32con.IMAGE_ICON, 0, 0, win32con.LR_LOADFROMFILE | win32con.LR_DEFAULTSIZE)
     wc = win32gui.WNDCLASS()
     wc.hInstance = win32api.GetModuleHandle()
     wc.lpszClassName = "closta"
@@ -68,7 +67,7 @@ def create_tray():
     cls = win32gui.RegisterClass(wc)
 
     hwnd = win32gui.CreateWindow(cls, "", win32con.WS_SYSMENU, 0, 0, 0, 0, 0, 0, wc.hInstance, None)
-    hicon = win32gui.LoadIcon(0, win32con.IDI_APPLICATION)
+    hicon = win32gui.LoadImage(0, str(resource_path("assets/closta_tray.ico")), win32con.IMAGE_ICON, 0, 0, win32con.LR_LOADFROMFILE | win32con.LR_DEFAULTSIZE)
     notify_info = (hwnd, 1, win32gui.NIF_ICON | win32gui.NIF_MESSAGE | win32gui.NIF_TIP,
                 win32con.WM_USER + 20, hicon, "closta")
     win32gui.Shell_NotifyIcon(win32gui.NIM_ADD, notify_info)
