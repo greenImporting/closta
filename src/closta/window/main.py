@@ -2,16 +2,12 @@ import dearpygui.dearpygui as dpg
 import sqlite3
 import threading
 import time
-import logging
-import pymonctl
 import ctypes
 import win32gui
 from closta import state
 from closta.storage.sqlite import delete_callback, save_task, init_db, edit_task, get_setting, save_setting, update_task_completion
 from closta.paths import DB_PATH
-from pathlib import Path
 
-logging.basicConfig(level=logging.ERROR, format="%(asctime)s - %(levelname)s - %(message)s")
 
 IMP_MAP = {"low":0, "medium":1, "high": 2} # map for importance, as i save it as an int.
 REV_IMP = {0:"low", 1:"medium", 2:"high"} # reverse importance map, for editing callback.

@@ -1,13 +1,8 @@
 from pathlib import Path
-from PIL import Image
 from time import sleep
 from closta import state
 import closta.window.main as cwin
 import threading
-import os
-import time
-import pyautogui
-import sys
 import ctypes
 import win32api
 import win32con
@@ -45,15 +40,13 @@ def show_closta():
     if state._window_ready:
         state._show_requested = True
         
-
 def init_closta():
-    state._spawn_pos = pyautogui.position()
+    state._spawn_pos = win32api.GetCursorPos()
     _window_thread = threading.Thread(target=cwin.main, daemon=True)
     _window_thread.start()
     if state._window_ready.wait(timeout=5):
 
         cwin.view_window(show=False, hwnd=state._hwnd)
-
 
 def create_tray():
     # big credits to https://github.com/hiroshil/Win32Gui_learning/blob/main/Shell32__Shell_NotifyIcon_ex1.py
@@ -72,10 +65,6 @@ def create_tray():
                 win32con.WM_USER + 20, hicon, "closta")
     win32gui.Shell_NotifyIcon(win32gui.NIM_ADD, notify_info)
     
-
-
-    
-
 def main():
     create_tray()
     init_closta()
