@@ -12,7 +12,7 @@ from closta.paths import DB_PATH
 IMP_MAP = {"low":0, "medium":1, "high": 2} # map for importance, as i save it as an int.
 REV_IMP = {0:"low", 1:"medium", 2:"high"} # reverse importance map, for editing callback.
 user32 = ctypes.windll.user32
-_last_shown_time = 0
+_focus_ignore_til = 0
 state._window_ready = threading.Event()
 
 """
@@ -274,13 +274,15 @@ def set_fonts():
         dpg.bind_item_font("h", heading_font)
 
 def view_window(show: bool,hwnd):
-    global closta_win, _last_shown_time
-    _last_shown_time = time.time()
+    global closta_win
+    
     if show:
-        user32.ShowWindowAsync(hwnd, 5)
+        state._window_visible = True
+        user32.ShowWindowAsync(hwnd, 5) # win32con.SW_SHOW is 5 but no need to import
         user32.SetForegroundWindow(hwnd)
     else:
-        user32.ShowWindowAsync(hwnd, 0)
+        state._window_visible = False
+        user32.ShowWindowAsync(hwnd, 0) #SW_HIDE
 
 def create_window():
     dpg.create_context()
@@ -318,19 +320,13 @@ def run_gui():
 def main():
     run_gui()
     user32.SetForegroundWindow(state._hwnd)
-    _first_focus = False
     view_window(show=False,hwnd=state._hwnd)
     while dpg.is_dearpygui_running():
         
-        if state._show_requested:
-            state._show_requested = False
-            view_window(True, state._hwnd)
-        if state._graceful_tray_exit:
-            break
-        if user32.GetForegroundWindow() == state._hwnd:
-            _first_focus = True
-        elif _first_focus and (time.time() - _last_shown_time > 0.3):
-            view_window(show=False, hwnd=state._hwnd)
+        if state._tray_toggle_reqd:
+            state._tray_toggle_reqd = False
+            view_window(not state._window_visible, state._hwnd)
+
         dpg.render_dearpygui_frame()
 
 

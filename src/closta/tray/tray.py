@@ -15,18 +15,18 @@ user32 = ctypes.windll.user32
 def wndproc(hwnd, msg, wp, lp):
     if msg == win32con.WM_USER + 20: # basically "if this tray interactuion is a tray icon click event:"
         if lp == win32con.WM_LBUTTONDOWN:
-            show_closta()
+            toggle_closta()
             return 0
         if lp == win32con.WM_RBUTTONDOWN:
             win32gui.SetForegroundWindow(hwnd)
             menu = win32gui.CreatePopupMenu()
-            win32gui.AppendMenu(menu, win32con.MF_STRING, 1, "spawn closta")
+            win32gui.AppendMenu(menu, win32con.MF_STRING, 1, "show closta")
             win32gui.AppendMenu(menu, win32con.MF_STRING, 2, "exit")
             x, y = win32gui.GetCursorPos()
             cmd = win32gui.TrackPopupMenu(menu, win32con.TPM_RETURNCMD, x, y, 0, hwnd, None)
             win32gui.DestroyMenu(menu)
             if cmd == 1:
-                show_closta()
+                toggle_closta()
             if cmd == 2:
                 win32gui.Shell_NotifyIcon(win32gui.NIM_DELETE, notify_info)
                 win32gui.PostQuitMessage(0)
@@ -36,9 +36,9 @@ def wndproc(hwnd, msg, wp, lp):
 def resource_path(relative_path):
     return Path(__file__).resolve().parent.parent.parent / relative_path
     
-def show_closta():
+def toggle_closta():
     if state._window_ready:
-        state._show_requested = True
+        state._tray_toggle_reqd = True
         
 def init_closta():
     state._spawn_pos = win32api.GetCursorPos()
