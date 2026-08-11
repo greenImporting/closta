@@ -16,6 +16,7 @@ user32 = ctypes.windll.user32
 old_wndproc = None
 state._window_ready = threading.Event()
 
+
 """
 
 current issues.
@@ -274,16 +275,16 @@ def set_fonts():
         heading_font = dpg.add_font("C:/Windows/Fonts/arial.ttf", size=24)
         dpg.bind_item_font("h", heading_font)
 
-def view_window(show: bool,hwnd):
-    global closta_win
-    
-    if show:
-        state._window_visible = True
-        user32.ShowWindowAsync(hwnd, win32con.SW_SHOW)
-        user32.SetForegroundWindow(hwnd)
-    else:
-        state._window_visible = False
-        user32.ShowWindowAsync(hwnd, win32con.SW_HIDE)
+
+#split viewwindow into show and hide for readability
+def show_window(hwnd):
+    state._window_visible = True
+    user32.ShowWindowAsync(hwnd, win32con.SW_SHOW)
+    user32.SetForegroundWindow(hwnd)
+
+def hide_window(hwnd):
+    state._window_visible = False
+    user32.ShowWindowAsync(hwnd, win32con.SW_HIDE)
 
 def create_window():
     dpg.create_context()
@@ -319,10 +320,11 @@ def run_gui():
     dpg.set_primary_window("closta", True)
 
 def closta_wndproc(hwnd, msg, wparam, lparam):
-    if msg == win32con.WM_KILLFOCUS:
+    if msg == win32con.WM_ACTIVATE:
+        if wparam == win32con.WA_INACTIVE:
         # should hide when focus loss 
-        view_window(False, hwnd)
-        return 0
+            hide_window(hwnd)
+            return 0
     return win32gui.CallWindowProc(old_wndproc, hwnd, msg, wparam, lparam)
     # return og dpg wndproc pointer, bc otherwise dpg sh1ts itself
 
@@ -332,7 +334,7 @@ def main():
     run_gui()
     old_wndproc = win32gui.SetWindowLong(state._closta_hwnd, win32con.GWL_WNDPROC, closta_wndproc)
     user32.SetForegroundWindow(state._closta_hwnd)
-    view_window(show=False,hwnd=state._closta_hwnd)
+    hide_window(state._closta_hwnd)
     while dpg.is_dearpygui_running():
         dpg.render_dearpygui_frame()
 

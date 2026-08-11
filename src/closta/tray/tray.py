@@ -1,6 +1,6 @@
 from pathlib import Path
-from time import sleep
 from closta import state
+import time
 import closta.window.main as cwin
 import threading
 import ctypes
@@ -9,13 +9,13 @@ import win32con
 import win32gui
 
 
-# icon not working, spawn closta. 
 user32 = ctypes.windll.user32
+
 
 def wndproc(hwnd, msg, wp, lp):
     if msg == win32con.WM_USER + 20: # basically "if this tray interactuion is a tray icon click event:"
         if lp == win32con.WM_LBUTTONUP:
-            toggle_closta()
+            show_closta()
         if lp == win32con.WM_RBUTTONUP:
             win32gui.SetForegroundWindow(hwnd)
             menu = win32gui.CreatePopupMenu()
@@ -25,7 +25,7 @@ def wndproc(hwnd, msg, wp, lp):
             cmd = win32gui.TrackPopupMenu(menu, win32con.TPM_RETURNCMD, x, y, 0, hwnd, None)
             win32gui.DestroyMenu(menu)
             if cmd == 1:
-                toggle_closta()
+                show_closta()
             if cmd == 2:
                 win32gui.Shell_NotifyIcon(win32gui.NIM_DELETE, notify_info)
                 win32gui.PostQuitMessage(0)
@@ -35,11 +35,12 @@ def wndproc(hwnd, msg, wp, lp):
 def resource_path(relative_path):
     return Path(__file__).resolve().parent.parent.parent / relative_path
     
-def toggle_closta():
+def show_closta():
     if state._window_visible:
-        cwin.view_window(False, state._closta_hwnd)
+        cwin.hide_window(state._closta_hwnd)
     else:
-        cwin.view_window(True, state._closta_hwnd)
+        cwin._focus_ignore_til = time.time() + 0.2
+        cwin.show_window(state._closta_hwnd)
         win32gui.SetForegroundWindow(state._closta_hwnd)
     return 0
         
@@ -49,7 +50,7 @@ def init_closta():
     _window_thread.start()
     if state._window_ready.wait(timeout=5):
 
-        cwin.view_window(show=False, hwnd=state._closta_hwnd)
+        cwin.hide_window(state._closta_hwnd)
 
 def create_tray():
     # big credits to https://github.com/hiroshil/Win32Gui_learning/blob/main/Shell32__Shell_NotifyIcon_ex1.py
