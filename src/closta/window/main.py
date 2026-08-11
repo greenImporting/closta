@@ -4,6 +4,7 @@ import threading
 import time
 import ctypes
 import win32gui
+import win32con
 from closta import state
 from closta.storage.sqlite import delete_callback, save_task, init_db, edit_task, get_setting, save_setting, update_task_completion
 from closta.paths import DB_PATH
@@ -12,7 +13,7 @@ from closta.paths import DB_PATH
 IMP_MAP = {"low":0, "medium":1, "high": 2} # map for importance, as i save it as an int.
 REV_IMP = {0:"low", 1:"medium", 2:"high"} # reverse importance map, for editing callback.
 user32 = ctypes.windll.user32
-_focus_ignore_til = 0
+old_wndproc = None
 state._window_ready = threading.Event()
 
 """
@@ -278,11 +279,11 @@ def view_window(show: bool,hwnd):
     
     if show:
         state._window_visible = True
-        user32.ShowWindowAsync(hwnd, 5) # win32con.SW_SHOW is 5 but no need to import
+        user32.ShowWindowAsync(hwnd, win32con.SW_SHOW)
         user32.SetForegroundWindow(hwnd)
     else:
         state._window_visible = False
-        user32.ShowWindowAsync(hwnd, 0) #SW_HIDE
+        user32.ShowWindowAsync(hwnd, win32con.SW_HIDE)
 
 def create_window():
     dpg.create_context()
@@ -312,21 +313,27 @@ def run_gui():
     create_window()
     dpg.setup_dearpygui()
     dpg.show_viewport()
-    state._hwnd = win32gui.FindWindow(None, "closta")
+    state._closta_hwnd = win32gui.FindWindow(None, "closta")
     state._window_ready.set()
     set_fonts()
     dpg.set_primary_window("closta", True)
 
-def main():
-    run_gui()
-    user32.SetForegroundWindow(state._hwnd)
-    view_window(show=False,hwnd=state._hwnd)
-    while dpg.is_dearpygui_running():
-        
-        if state._tray_toggle_reqd:
-            state._tray_toggle_reqd = False
-            view_window(not state._window_visible, state._hwnd)
+def closta_wndproc(hwnd, msg, wparam, lparam):
+    if msg == win32con.WM_KILLFOCUS:
+        # should hide when focus loss 
+        view_window(False, hwnd)
+        return 0
+    return win32gui.CallWindowProc(old_wndproc, hwnd, msg, wparam, lparam)
+    # return og dpg wndproc pointer, bc otherwise dpg sh1ts itself
 
+        
+def main():
+    global old_wndproc
+    run_gui()
+    old_wndproc = win32gui.SetWindowLong(state._closta_hwnd, win32con.GWL_WNDPROC, closta_wndproc)
+    user32.SetForegroundWindow(state._closta_hwnd)
+    view_window(show=False,hwnd=state._closta_hwnd)
+    while dpg.is_dearpygui_running():
         dpg.render_dearpygui_frame()
 
 

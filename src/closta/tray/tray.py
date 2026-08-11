@@ -14,10 +14,9 @@ user32 = ctypes.windll.user32
 
 def wndproc(hwnd, msg, wp, lp):
     if msg == win32con.WM_USER + 20: # basically "if this tray interactuion is a tray icon click event:"
-        if lp == win32con.WM_LBUTTONDOWN:
+        if lp == win32con.WM_LBUTTONUP:
             toggle_closta()
-            return 0
-        if lp == win32con.WM_RBUTTONDOWN:
+        if lp == win32con.WM_RBUTTONUP:
             win32gui.SetForegroundWindow(hwnd)
             menu = win32gui.CreatePopupMenu()
             win32gui.AppendMenu(menu, win32con.MF_STRING, 1, "show closta")
@@ -37,8 +36,12 @@ def resource_path(relative_path):
     return Path(__file__).resolve().parent.parent.parent / relative_path
     
 def toggle_closta():
-    if state._window_ready:
-        state._tray_toggle_reqd = True
+    if state._window_visible:
+        cwin.view_window(False, state._closta_hwnd)
+    else:
+        cwin.view_window(True, state._closta_hwnd)
+        win32gui.SetForegroundWindow(state._closta_hwnd)
+    return 0
         
 def init_closta():
     state._spawn_pos = win32api.GetCursorPos()
@@ -46,7 +49,7 @@ def init_closta():
     _window_thread.start()
     if state._window_ready.wait(timeout=5):
 
-        cwin.view_window(show=False, hwnd=state._hwnd)
+        cwin.view_window(show=False, hwnd=state._closta_hwnd)
 
 def create_tray():
     # big credits to https://github.com/hiroshil/Win32Gui_learning/blob/main/Shell32__Shell_NotifyIcon_ex1.py
@@ -59,9 +62,9 @@ def create_tray():
     wc.hCursor = win32gui.LoadCursor(0, win32con.IDC_ARROW)
     cls = win32gui.RegisterClass(wc)
 
-    hwnd = win32gui.CreateWindow(cls, "", win32con.WS_SYSMENU, 0, 0, 0, 0, 0, 0, wc.hInstance, None)
+    state._tray_hwnd = win32gui.CreateWindow(cls, "", win32con.WS_SYSMENU, 0, 0, 0, 0, 0, 0, wc.hInstance, None)
     hicon = win32gui.LoadImage(0, str(resource_path("assets/closta_tray.ico")), win32con.IMAGE_ICON, 0, 0, win32con.LR_LOADFROMFILE | win32con.LR_DEFAULTSIZE)
-    notify_info = (hwnd, 1, win32gui.NIF_ICON | win32gui.NIF_MESSAGE | win32gui.NIF_TIP,
+    notify_info = (state._tray_hwnd, 1, win32gui.NIF_ICON | win32gui.NIF_MESSAGE | win32gui.NIF_TIP,
                 win32con.WM_USER + 20, hicon, "closta")
     win32gui.Shell_NotifyIcon(win32gui.NIM_ADD, notify_info)
     
