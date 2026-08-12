@@ -16,14 +16,6 @@ user32 = ctypes.windll.user32
 old_wndproc = None
 state._window_ready = threading.Event()
 
-
-"""
-
-current issues.
-
-- 
-
-"""
 def get_centered_pos(win_width: int, win_height: int, first_run=False) -> tuple[int, int]:
     # look at this this is cute and fun and epic
     if not first_run:
@@ -55,7 +47,6 @@ def newbie_checker():
         welcome_popup()
         # just setting initial settings
         
-
     return 
 
 
@@ -99,11 +90,13 @@ def build_task(task_id, heading, description, importance: int, completed: int, p
 def load_tasks_ui(parent="task_container"):
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
-    c.execute('SELECT id, name, description, importance, completed FROM tasks')
-    rows = c.fetchall()
-    conn.close()
-    for row in rows:
-        build_task(row[0], row[1], row[2], row[3], row[4], parent=parent)
+    try:
+        c.execute('SELECT id, name, description, importance, completed FROM tasks')
+        rows = c.fetchall()
+    finally:
+        conn.close()
+        for row in rows:
+            build_task(row[0], row[1], row[2], row[3], row[4], parent=parent)
 
 
 def new_task(sender, app_data):
@@ -276,11 +269,12 @@ def set_fonts():
         dpg.bind_item_font("h", heading_font)
 
 
-#split viewwindow into show and hide for readability
+#split viewwindow into show,hide and toggle for readability
 def show_window(hwnd):
     state._window_visible = True
     user32.ShowWindowAsync(hwnd, win32con.SW_SHOW)
     user32.SetForegroundWindow(hwnd)
+
 
 def hide_window(hwnd):
     state._window_visible = False
@@ -321,10 +315,20 @@ def run_gui():
 
 def closta_wndproc(hwnd, msg, wparam, lparam):
     if msg == win32con.WM_ACTIVATE:
-        if wparam == win32con.WA_INACTIVE:
-        # should hide when focus loss 
-            hide_window(hwnd)
-            return 0
+        # wm_activate packs extra info. !! NOT SAFE !!! NOT SAFDE !!!
+        # extract manually because haha hex code in python omg wow so amazing
+        activation = wparam & 0xFFFF # exrtact low 16 bits 
+
+        if activation == win32con.WA_INACTIVE:
+            #ignroe focus event whilst we switch to/from tray
+            if time.monotonic() < state._focus_ignore_til:
+                return 0
+            
+            if state._window_visible:
+                hide_window(hwnd)
+            
+        return win32gui.CallWindowProc(old_wndproc, hwnd, msg, wparam, lparam)
+
     return win32gui.CallWindowProc(old_wndproc, hwnd, msg, wparam, lparam)
     # return og dpg wndproc pointer, bc otherwise dpg sh1ts itself
 
@@ -333,7 +337,7 @@ def main():
     global old_wndproc
     run_gui()
     old_wndproc = win32gui.SetWindowLong(state._closta_hwnd, win32con.GWL_WNDPROC, closta_wndproc)
-    user32.SetForegroundWindow(state._closta_hwnd)
+
     hide_window(state._closta_hwnd)
     while dpg.is_dearpygui_running():
         dpg.render_dearpygui_frame()

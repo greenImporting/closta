@@ -14,8 +14,17 @@ user32 = ctypes.windll.user32
 
 def wndproc(hwnd, msg, wp, lp):
     if msg == win32con.WM_USER + 20: # basically "if this tray interactuion is a tray icon click event:"
+        if lp == win32con.WM_LBUTTONDOWN:
+            state._focus_ignore_til = time.monotonic() + 0.2
         if lp == win32con.WM_LBUTTONUP:
-            show_closta()
+            state._focus_ignore_til = time.monotonic() + 0.2
+
+            if state._window_visible:
+                cwin.hide_window(state._closta_hwnd)
+            else:
+                cwin.show_window(state._closta_hwnd)
+            
+            return 0
         if lp == win32con.WM_RBUTTONUP:
             win32gui.SetForegroundWindow(hwnd)
             menu = win32gui.CreatePopupMenu()
@@ -25,7 +34,8 @@ def wndproc(hwnd, msg, wp, lp):
             cmd = win32gui.TrackPopupMenu(menu, win32con.TPM_RETURNCMD, x, y, 0, hwnd, None)
             win32gui.DestroyMenu(menu)
             if cmd == 1:
-                show_closta()
+                state._focus_ignore_til = time.monotonic() + 0.2
+                cwin.show_window(state._closta_hwnd)
             if cmd == 2:
                 win32gui.Shell_NotifyIcon(win32gui.NIM_DELETE, notify_info)
                 win32gui.PostQuitMessage(0)
@@ -35,17 +45,8 @@ def wndproc(hwnd, msg, wp, lp):
 def resource_path(relative_path):
     return Path(__file__).resolve().parent.parent.parent / relative_path
     
-def show_closta():
-    if state._window_visible:
-        cwin.hide_window(state._closta_hwnd)
-    else:
-        cwin._focus_ignore_til = time.time() + 0.2
-        cwin.show_window(state._closta_hwnd)
-        win32gui.SetForegroundWindow(state._closta_hwnd)
-    return 0
         
 def init_closta():
-    state._spawn_pos = win32api.GetCursorPos()
     _window_thread = threading.Thread(target=cwin.main, daemon=True)
     _window_thread.start()
     if state._window_ready.wait(timeout=5):
