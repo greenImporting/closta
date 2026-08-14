@@ -15,4 +15,3 @@ hello pep8 ring ring
 ### bits and bobs
 - [ ] tests
 - [ ] hide window open from taskbar?
-- [ ] change imports in pyproject
