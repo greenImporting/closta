@@ -1,63 +1,80 @@
 from pathlib import Path
-from PIL import Image
-from time import sleep
 from closta import state
-import closta.window.main as cwin
-import pystray
-import threading
-import os
 import time
-import pyautogui
-import sys
+import closta.window.main as cwin
+import threading
 import ctypes
+import win32api
+import win32con
+import win32gui
+
 
 user32 = ctypes.windll.user32
 
 
+def wndproc(hwnd, msg, wp, lp):
+    if msg == win32con.WM_USER + 20: # basically "if this tray interactuion is a tray icon click event:"
+        if lp == win32con.WM_LBUTTONDOWN:
+            state._focus_ignore_til = time.monotonic() + 0.2
+        if lp == win32con.WM_LBUTTONUP:
+            state._focus_ignore_til = time.monotonic() + 0.2
+
+            if state._window_visible:
+                cwin.hide_window(state._closta_hwnd)
+            else:
+                cwin.show_window(state._closta_hwnd)
+            
+            return 0
+        if lp == win32con.WM_RBUTTONUP:
+            win32gui.SetForegroundWindow(hwnd)
+            menu = win32gui.CreatePopupMenu()
+            win32gui.AppendMenu(menu, win32con.MF_STRING, 1, "show closta")
+            win32gui.AppendMenu(menu, win32con.MF_STRING, 2, "exit")
+            x, y = win32gui.GetCursorPos()
+            cmd = win32gui.TrackPopupMenu(menu, win32con.TPM_RETURNCMD, x, y, 0, hwnd, None)
+            win32gui.DestroyMenu(menu)
+            if cmd == 1:
+                state._focus_ignore_til = time.monotonic() + 0.2
+                cwin.show_window(state._closta_hwnd)
+            if cmd == 2:
+                win32gui.Shell_NotifyIcon(win32gui.NIM_DELETE, notify_info)
+                win32gui.PostQuitMessage(0)
+            return 0
+    return win32gui.DefWindowProc(hwnd, msg, wp, lp)
+
 def resource_path(relative_path):
     return Path(__file__).resolve().parent.parent.parent / relative_path
     
-def show_closta():
-    if state._window_ready:
-        state._show_requested = True
         
-
 def init_closta():
-    state._spawn_pos = pyautogui.position()
     _window_thread = threading.Thread(target=cwin.main, daemon=True)
     _window_thread.start()
     if state._window_ready.wait(timeout=5):
 
-        cwin.view_window(show=False, hwnd=state._hwnd)
-
-
-
-def exit_sequence(icon, item):
-    state._graceful_tray_exit = True
-    icon.stop()
-    os._exit(0)
-
-
-def build_menu(ico):
-    return pystray.Menu(
-        pystray.MenuItem("show closta", show_closta, default=True),
-        pystray.MenuItem("exit", exit_sequence)
-    )
-
+        cwin.hide_window(state._closta_hwnd)
 
 def create_tray():
-    imgpath = resource_path("assets/closta_tray.png")
-    trayico = Image.open(imgpath)
-    closta_tray = pystray.Icon("uhhh", icon=trayico)
-    closta_tray.menu = build_menu(closta_tray)
-    threading.Thread(target=closta_tray.run, daemon=True).start()
+    # big credits to https://github.com/hiroshil/Win32Gui_learning/blob/main/Shell32__Shell_NotifyIcon_ex1.py
+    # great file to understand the tray loguic
+    global notify_info
+    wc = win32gui.WNDCLASS()
+    wc.hInstance = win32api.GetModuleHandle()
+    wc.lpszClassName = "closta"
+    wc.lpfnWndProc = wndproc
+    wc.hCursor = win32gui.LoadCursor(0, win32con.IDC_ARROW)
+    cls = win32gui.RegisterClass(wc)
 
+    state._tray_hwnd = win32gui.CreateWindow(cls, "", win32con.WS_SYSMENU, 0, 0, 0, 0, 0, 0, wc.hInstance, None)
+    hicon = win32gui.LoadImage(0, str(resource_path("assets/closta_tray.ico")), win32con.IMAGE_ICON, 0, 0, win32con.LR_LOADFROMFILE | win32con.LR_DEFAULTSIZE)
+    notify_info = (state._tray_hwnd, 1, win32gui.NIF_ICON | win32gui.NIF_MESSAGE | win32gui.NIF_TIP,
+                win32con.WM_USER + 20, hicon, "closta")
+    win32gui.Shell_NotifyIcon(win32gui.NIM_ADD, notify_info)
+    
 def main():
     create_tray()
     init_closta()
-
-    while True:
-        sleep(3600)
+    win32gui.PumpMessages()
+    # no more while true <3
 
 if __name__ == "__main__":
     main()

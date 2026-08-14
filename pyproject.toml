@@ -1,15 +1,10 @@
 [project]
 name = "closta"
-version = "0.3"
+version = "0.4"
 readme = "README.md"
 requires-python = ">=3.8"
 dependencies = [
     "dearpygui",
-    "pywinctl",
-    "pystray",
-    "pymonctl",
-    "pillow",
-    "pyautogui",
     "pywin32",
 ]
 

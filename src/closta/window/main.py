@@ -2,30 +2,20 @@ import dearpygui.dearpygui as dpg
 import sqlite3
 import threading
 import time
-import logging
-import pymonctl
 import ctypes
 import win32gui
+import win32con
 from closta import state
 from closta.storage.sqlite import delete_callback, save_task, init_db, edit_task, get_setting, save_setting, update_task_completion
 from closta.paths import DB_PATH
-from pathlib import Path
 
-logging.basicConfig(level=logging.ERROR, format="%(asctime)s - %(levelname)s - %(message)s")
 
 IMP_MAP = {"low":0, "medium":1, "high": 2} # map for importance, as i save it as an int.
 REV_IMP = {0:"low", 1:"medium", 2:"high"} # reverse importance map, for editing callback.
 user32 = ctypes.windll.user32
-_last_shown_time = 0
+old_wndproc = None
 state._window_ready = threading.Event()
 
-"""
-
-current issues.
-
-- 
-
-"""
 def get_centered_pos(win_width: int, win_height: int, first_run=False) -> tuple[int, int]:
     # look at this this is cute and fun and epic
     if not first_run:
@@ -57,7 +47,6 @@ def newbie_checker():
         welcome_popup()
         # just setting initial settings
         
-
     return 
 
 
@@ -101,11 +90,13 @@ def build_task(task_id, heading, description, importance: int, completed: int, p
 def load_tasks_ui(parent="task_container"):
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
-    c.execute('SELECT id, name, description, importance, completed FROM tasks')
-    rows = c.fetchall()
-    conn.close()
-    for row in rows:
-        build_task(row[0], row[1], row[2], row[3], row[4], parent=parent)
+    try:
+        c.execute('SELECT id, name, description, importance, completed FROM tasks')
+        rows = c.fetchall()
+    finally:
+        conn.close()
+        for row in rows:
+            build_task(row[0], row[1], row[2], row[3], row[4], parent=parent)
 
 
 def new_task(sender, app_data):
@@ -277,14 +268,17 @@ def set_fonts():
         heading_font = dpg.add_font("C:/Windows/Fonts/arial.ttf", size=24)
         dpg.bind_item_font("h", heading_font)
 
-def view_window(show: bool,hwnd):
-    global closta_win, _last_shown_time
-    _last_shown_time = time.time()
-    if show:
-        user32.ShowWindowAsync(hwnd, 5)
-        user32.SetForegroundWindow(hwnd)
-    else:
-        user32.ShowWindowAsync(hwnd, 0)
+
+#split viewwindow into show,hide and toggle for readability
+def show_window(hwnd):
+    state._window_visible = True
+    user32.ShowWindowAsync(hwnd, win32con.SW_SHOW)
+    user32.SetForegroundWindow(hwnd)
+
+
+def hide_window(hwnd):
+    state._window_visible = False
+    user32.ShowWindowAsync(hwnd, win32con.SW_HIDE)
 
 def create_window():
     dpg.create_context()
@@ -314,27 +308,38 @@ def run_gui():
     create_window()
     dpg.setup_dearpygui()
     dpg.show_viewport()
-    state._hwnd = win32gui.FindWindow(None, "closta")
+    state._closta_hwnd = win32gui.FindWindow(None, "closta")
     state._window_ready.set()
     set_fonts()
     dpg.set_primary_window("closta", True)
 
-def main():
-    run_gui()
-    user32.SetForegroundWindow(state._hwnd)
-    _first_focus = False
-    view_window(show=False,hwnd=state._hwnd)
-    while dpg.is_dearpygui_running():
+def closta_wndproc(hwnd, msg, wparam, lparam):
+    if msg == win32con.WM_ACTIVATE:
+        # wm_activate packs extra info. !! NOT SAFE !!! NOT SAFDE !!!
+        # extract manually because haha hex code in python omg wow so amazing
+        activation = wparam & 0xFFFF # exrtact low 16 bits 
+
+        if activation == win32con.WA_INACTIVE:
+            #ignroe focus event whilst we switch to/from tray
+            if time.monotonic() < state._focus_ignore_til:
+                return 0
+            
+            if state._window_visible:
+                hide_window(hwnd)
+            
+        return win32gui.CallWindowProc(old_wndproc, hwnd, msg, wparam, lparam)
+
+    return win32gui.CallWindowProc(old_wndproc, hwnd, msg, wparam, lparam)
+    # return og dpg wndproc pointer, bc otherwise dpg sh1ts itself
+
         
-        if state._show_requested:
-            state._show_requested = False
-            view_window(True, state._hwnd)
-        if state._graceful_tray_exit:
-            break
-        if user32.GetForegroundWindow() == state._hwnd:
-            _first_focus = True
-        elif _first_focus and (time.time() - _last_shown_time > 0.3):
-            view_window(show=False, hwnd=state._hwnd)
+def main():
+    global old_wndproc
+    run_gui()
+    old_wndproc = win32gui.SetWindowLong(state._closta_hwnd, win32con.GWL_WNDPROC, closta_wndproc)
+
+    hide_window(state._closta_hwnd)
+    while dpg.is_dearpygui_running():
         dpg.render_dearpygui_frame()
 
 
