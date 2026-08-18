@@ -32,11 +32,10 @@ uv sync --extra dev
 
 # build
 python -m nuitka `
-    --onefile `
+    --standalone `
     --windows-console-mode=disable `
     --windows-icon-from-ico=src/assets/closta_tray.ico `
     --include-data-dir=src/assets=assets `
-    --output-filename=closta.exe `
     src/closta
 
 if ($LASTEXITCODE -ne 0) {
@@ -45,4 +44,4 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 
-write-host 'thanks for building & using my app! you might get it stolen by defender though.'
+write-host 'thanks for building & using my app!'
